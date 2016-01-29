@@ -1,0 +1,9 @@
+#connect as sysdba
+alter system set control_files='${existing_controlfile}, ${non_existing_controlfile}' scope=spfile;
+shutdown immediate;
+startup nomount;
+
+#connect in rman
+rman target=/ << EOF
+  restore controlfile from '${existing_controlfile}
+EOF

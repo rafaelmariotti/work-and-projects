@@ -1,0 +1,10 @@
+#display all awr snapshot history
+select * 
+from dba_hist_snapshot 
+order by begin_interval_time desc;
+
+#generate an html file (copy the result code and open with your browser)
+select * 
+from table( 
+  dbms_workload_repository.awr_report_html( ${dbid}, ${instance_number}, ${snapshot_id_begin}, ${snapshot_id_end})
+);
