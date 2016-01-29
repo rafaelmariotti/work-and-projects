@@ -1,0 +1,2 @@
+#check what is going on in port ${port_number}
+tcpdump -s 0 -nnAi eth${interface_number} port ${port_number}

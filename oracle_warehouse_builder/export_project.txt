@@ -1,0 +1,11 @@
+#export project
+cd ${owb_home}/owb/bin/unix
+./OMBPlus.sh
+
+#and then, issue the following commands
+OMBCONNECT ${database_user}/${database_password}@${database_host}:${database_port}:${database_service}
+set OMBLOG ${omb_log_file}
+set systemTime [clock seconds]
+set systemTimeFormat [clock format $systemTime -format %Y%M%d-%H%M%S]
+OMBEXPORT MDL_FILE '${dump_file}' FROM PROJECT '${owb_project_name}' WITH DEPENDEE_DEPTH MAX INCLUDE_USER_DEFINITIONS OUTPUT LOG '${dump_directory}'
+

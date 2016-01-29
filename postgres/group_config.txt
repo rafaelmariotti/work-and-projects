@@ -1,0 +1,14 @@
+#create a new group
+create group ${group_name};
+
+#add a user to a group
+alter group ${group_name} add user ${username};
+
+#grant privileges to group (login with target database owner)
+grant select on all tables in schema public to group ${group_name};
+grant update on all tables in schema public to group ${group_name};
+grant delete on all tables in schema public to group ${group_name};
+grant insert on all tables in schema public to group ${group_name};
+grant usage on all sequences in schema public to group ${group_name};
+grant execute on all functions in schema public to group ${group_name};
+

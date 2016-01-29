@@ -1,0 +1,6 @@
+#create a ssh key to avoid the need to write a password when login on a host
+ssh-keygen -t rsa
+cd ~/.ssh
+cat id_rsa.pub
+
+#copy the 'id_rsa.pub' file content and paste it into '~/.ssh/authorized_keys' on the host where you dont want to write the password to login

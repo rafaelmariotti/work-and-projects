@@ -1,0 +1,4 @@
+#login into the target host and issue the following command
+ssh -f -N -g -L ${target_port}:${destiny_host}:${destiny_port} -l ${destiny_user} ${target_host} < /dev/null
+
+#in this cenario, when you try to send a package to host ${target_host} on port ${target_port}, the request will be redirected to host ${destiny_host} on port ${target_port}
