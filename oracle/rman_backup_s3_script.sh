@@ -34,21 +34,22 @@ check_parameters(){
 }
 
 delete_old_backups(){
-  BACKUP_BASE=$1
-  BACKUP_DIR=$2
-  for directory in `ls $BACKUP_BASE | grep "bkp" | grep -v "$BACKUP_DIR"`
+  backup_base=$1
+  backup_dir=$2
+  for directory in `ls ${backup_base} | grep "bkp" | grep -v "${backup_dir}"`
   do
-    if [ -z `ps aux | grep "s3cmd" | grep "$directory"` ]; then
-      echo "  directory $directory deleted"
-      rm -rf $BACKUP_BASE/$directory
+    if [ -z `ps aux | grep "s3cmd" | grep "${directory}"` ]; then
+      echo "  directory ${directory} deleted"
+      rm -rf ${backup_base}/${directory}
     fi
     echo ""
   done
 }
 
 run_backup(){
-  BACKUP_HOME=$1
-  mkdir -p $BACKUP_HOME
+  backup_home=$1
+  backup_date=`date +'%d%m%Y'`
+  mkdir -p ${backup_home}
 
   echo "Starting backup process.. (`date +"%d/%m/%Y %H:%M"`)"
   rman target / << EOF
@@ -70,19 +71,15 @@ run_backup(){
       allocate channel c14 device type disk maxpiecesize 2G;
       allocate channel c15 device type disk maxpiecesize 2G;
       allocate channel c16 device type disk maxpiecesize 2G;
-      allocate channel c17 device type disk maxpiecesize 2G;
-      allocate channel c18 device type disk maxpiecesize 2G;
-      allocate channel c19 device type disk maxpiecesize 2G;
-      allocate channel c20 device type disk maxpiecesize 2G;
 
       delete noprompt expired backup;
-      delete noprompt obsolete;
-      crosscheck backupset;
-      configure snapshot controlfile name to '$BACKUP_HOME/controlfile_%d_backup.ora';
-      backup as compressed backupset database format '$BACKUP_HOME/backup_%d_%D%M%Y_dbid_%I_%U.bkp' include current controlfile;
+      crosscheck backup;
 
-      backup current controlfile for standby format '$BACKUP_HOME/controlfile_standby_%d_backup.ora';
-      backup spfile format '$BACKUP_HOME/spfile%d.ora';
+      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e.bkp' tag='archivelog_${backup_date}';
+
+      backup current controlfile format '${backup_home}/controlfile.bkp';
+      backup current controlfile for standby format '${backup_home}/controlfile_stdby.bkp';
+      backup spfile format '${backup_home}/spfile.bkp';
 
       release channel c1;
       release channel c2;
@@ -100,36 +97,32 @@ run_backup(){
       release channel c14;
       release channel c15;
       release channel c16;
-      release channel c17;
-      release channel c18;
-      release channel c19;
-      release channel c20;
   }
 EOF
 
 sqlplus -S / as sysdba << EOF
-create pfile='$BACKUP_HOME/pfileprodbr.ora' from spfile;
+create pfile='${backup_home}/pfileprodbr.ora' from spfile;
 EOF
 
   echo "Done (`date +"%d/%m/%Y %H:%M"`)"
 }
 
 send_to_s3(){
-  BACKUP_HOME=$1
-  S3_FLAG=$2
-  S3_BUCKET=$3
-  BACKUP_DIR=$4
+  backup_home=$1
+  s3_flag=$2
+  s3_bucket=$3
+  backup_dir=$4
 
-  if [ "$S3_FLAG" == "send_s3" ]; then
-    for file in `ls $BACKUP_HOME`; do
-      s3cmd put $BACKUP_HOME/$file $S3_BUCKET/$BACKUP_DIR/
+  if [ "${s3_flag}" == "send_s3" ]; then
+    for file in `ls ${backup_home}`; do
+      s3cmd put ${backup_home}/$file ${s3_bucket}/${backup_dir}/
       if [ $? -eq 0 ]; then
-        if [ `s3cmd ls $S3_BUCKET/$BACKUP_DIR/$file | awk '{print $3}'` ]; then
+        if [ `s3cmd ls ${s3_bucket}/${backup_dir}/$file | awk '{print $3}'` ]; then
           echo "  INFO: file $file sent with success to s3 bucket"
         else
-          while [ `s3cmd ls $S3_BUCKET/$BACKUP_DIR/$file | grep $file | wc -l` -eq 0 ]; do
+          while [ `s3cmd ls ${s3_bucket}/${backup_dir}/$file | grep $file | wc -l` -eq 0 ]; do
             echo "  WARN: file $file is corrupted. Trying to send file again..."
-            s3cmd put $BACKUP_HOME/$file $S3_BUCKET/$BACKUP_DIR/
+            s3cmd put ${backup_home}/$file ${s3_bucket}/${backup_dir}/
           done
           echo "  INFO: file $file sent with success to s3 bucket"
         fi
@@ -142,13 +135,13 @@ send_to_s3(){
 
 main(){
 
-  BACKUP_DIR="bkp`date +\"%d%m%Y_%H%M\"`"
-  BACKUP_HOME=$1/$BACKUP_DIR
+  backup_dir="bkp`date +\"%d%m%Y_%H%M\"`"
+  backup_home=$1/${backup_dir}
 
   check_parameters $1 $2 $3
-  delete_old_backups $1 $BACKUP_DIR
-  run_backup $BACKUP_HOME
-  send_to_s3 $BACKUP_HOME $2 $3 $BACKUP_DIR
+  delete_old_backups $1 ${backup_dir}
+  run_backup ${backup_home}
+  send_to_s3 ${backup_home} $2 $3 ${backup_dir}
 }
 
 main $1 $2 $3
