@@ -1,0 +1,33 @@
+#remember to set your spfile with db_name to your original database, and the db_unique_name to your new ${new_SID} variable
+
+source ~/.bash_profile
+export ORACLE_SID=${new_SID}
+
+rman target=/ << EOF
+run {
+  set newname for database to '+data/${new_SID}/datafile/%b';
+  allocate channel c1 device type disk;
+  allocate channel c2 device type disk;
+
+  restore database;
+  recover database;
+
+  release channel c1;
+  release channel c2;
+}
+EOF
+
+
+sqlplus / as sysdba << EOF
+shutdown immediate;
+startup mount;
+EOF
+
+nid target=/ setname=true dbname=${new_dbname}
+
+sqlplus / as sysdba << EOF
+startup nomount;
+alter system set db_name='sandbox' scope=spfile;
+shutdown immediate;
+startup;
+EOF
