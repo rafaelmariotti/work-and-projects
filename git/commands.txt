@@ -1,3 +1,4 @@
+#basic commands
 git init
 git clone ${repository_url}
 git add ${file}
@@ -7,4 +8,10 @@ git push origin master
 git pull [--rebase origin master]
 git rm ${file}
 
+#new branch with pull request
+git checkout -b ${new_branch}  #change (or create and change) to a new branch
+git add . -p                   #interactive mode to add
+git push -u origin ${new_branch}
+
+#others
 git remote set-url origin ${repository_url}
