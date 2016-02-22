@@ -2,8 +2,8 @@
 
 ###########################################
 # script: Calculate SO params (oracle)    #
-# date: 02/10/2015                        #
-# version: 1.0                            #
+# date: 02/22/2016                        #
+# version: 1.1                            #
 # developed by: Rafael Mariotti           #
 ###########################################
 
@@ -54,7 +54,12 @@ case $KERN in
           else
             echo "vm.nr_hugepages = $NUM_PG"
           fi ;;
-    *) echo "vm.nr_hugepages = Unrecognized kernel version $KERN." ;;
+    *) if [ $NUM_PG -eq 1 ]; then
+         red=`tput setaf 1`
+         echo "#vm.nr_hugepages = Unrecognized kernel version $KERN. Besides, your database is down."
+       else
+         echo "#vm.nr_hugepages = Unrecognized kernel version $KERN. Maybe $NUM_PG ?"
+       fi ;;
 esac
 # End
 
