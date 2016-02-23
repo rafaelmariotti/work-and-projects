@@ -75,7 +75,7 @@ run_backup(){
       delete noprompt expired backup;
       crosscheck backup;
 
-      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e.bkp' tag='archivelog_${backup_date}';
+      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e_%p.bkp' tag='archivelog_${backup_date}';
 
       backup current controlfile format '${backup_home}/controlfile.bkp';
       backup current controlfile for standby format '${backup_home}/controlfile_stdby.bkp';
