@@ -1,0 +1,13 @@
+srvctl add listener -l ${listener_name} -s -p ${listener_port}
+srvct start listener -l ${listener_name} -n ${node_name_if_RAC}
+
+#static listener with different ports
+echo "
+LISTENER_${listener_name} =
+(ADDRESS_LIST =
+    (ADDRESS= (PROTOCOL=tcp)(HOST = ${listener_IP})(PORT = {listener_port}))
+)
+" >> $GRID_HOME/network/admin/listener.ora
+
+sqlplus / as sysdba
+  alter system set LOCAL_LISTENER='(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=${listener_IP})(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=${listener_IP})(PORT=${listener_port})))' scope=BOTH;
