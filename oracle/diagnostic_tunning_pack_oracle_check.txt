@@ -1,0 +1,23 @@
+SELECT name,
+       detected_usages detected,
+                 total_samples   samples,
+                 currently_used  used,
+                 to_char(last_sample_date,'MMDDYYYY:HH24:MI') last_sample,
+                 sample_interval interval
+FROM dba_feature_usage_statistics
+WHERE name = 'Automatic Workload Repository';
+
+SELECT name,       
+       detected_usages detected,
+       total_samples   samples,
+       currently_used  used,
+       to_char(last_sample_date,'MMDDYYYY:HH24:MI') last_sample,
+       sample_interval interval
+  FROM dba_feature_usage_statistics
+ WHERE name = 'Automatic Workload Repository'     OR  name like 'SQL%';
+ 
+ show parameter control_management_pack_access;
+ 
+ alter system set control_management_pack_access='NONE' scope=both;
+ alter system set control_management_pack_access='DIAGNOSTIC' scope=both;
+ alter system set control_management_pack_access='DIAGNOSTIC+TUNING' scope=both;
