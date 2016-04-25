@@ -3,9 +3,11 @@ docker images #list images
 docker rmi ${image_id} #remove image
 docker rm ${container_name} #remove container
 docker build -t ${tag} ${dockerfile_dir} #build a custom image
-docker tag ${image_id} ${my_dockerhub_acc}/${repository_img_name}:${version_latest} #tag your image, creating a new one
+
 docker login --username=${username} --email=${email_address} #login with your dockerhub account
+docker tag ${image_id} ${my_dockerhub_acc}/${repository_img_name}:${version_latest} #tag your image, creating a new one
 docker push ${my_dockerhub_acc}/${repository_img_name} #pushes your new docker image to your dockerhub account
+
 docker start ${container_name} #run a created container
 
 docker attach ${cointainer_name} #attach a container, if you can (if you are using a deamon, you cant do that)

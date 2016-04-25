@@ -1,12 +1,12 @@
 #!/bin/bash
 
-##############################################################################################
-# script: Backup oracle database via rman                                                    #
-# date: 15/02/2016                                                                           #
-# version: 1.3                                                                               #
-# developed by: Rafael Mariotti                                                              #
-# call example: ./backup_database.sh ${target_backup_directory} ${flag_send_s3} ${s3_bucket} #
-##############################################################################################
+#####################################################################################################
+# script: Backup incremental oracle database via rman                                               #
+# date: 15/02/2016                                                                                  #
+# version: 1.3                                                                                      #
+# developed by: Rafael Mariotti                                                                     #
+# call example: ./backup_database.sh ${SID} ${target_backup_directory} ${flag_send_s3} ${s3_bucket} #
+#####################################################################################################
 
 source ~/.bash_profile
 
@@ -36,37 +36,62 @@ check_parameters(){
 delete_old_backups(){
   backup_base=$1
   backup_dir=$2
-  for directory in `ls ${backup_base} | grep "bkp" | grep -v "${backup_dir}"`
-  do
-    if [ -z `ps aux | grep "s3cmd" | grep "${directory}"` ]; then
-      echo "  directory ${directory} deleted"
-      rm -rf ${backup_base}/${directory}
-    fi
-    echo ""
-  done
+  s3_archive_backup=$3
+
+  rman target=/ << EOF
+    delete noprompt expired backup;
+    crosscheck backup;
+EOF
+
+  sqlplus -s / as sysdba > /dev/null << EOF
+  set head off;
+  spool '/tmp/backup_tag.log';
+  SELECT tag
+  FROM
+    (SELECT tag
+    FROM v\$backup_files
+    WHERE BACKUP_TYPE = 'BACKUP SET'
+    AND FILE_TYPE     = 'PIECE'
+    AND BS_TYPE       = 'DATAFILE'
+    AND STATUS        = 'AVAILABLE'
+    AND TAG LIKE 'BACKUPSET\_%' ESCAPE '\\'
+    ORDER BY completion_time DESC nulls last
+    ) last_tag
+  WHERE rownum <=1 ;
+  spool off;
+EOF
+
+  backup_tag=`cat /tmp/backup_tag.log | head -2 | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//'`
+
+  if [ "${backup_tag}" == "no rows selected" ]; then
+    echo "[ ERROR ] There are no available backups to increment."
+    exit 1
+  fi
 
   while [ `ps aux | grep "archive_database.sh" | grep -v grep | wc -l` -ne 0 ]
   do
     sleep 60
   done
-  rm -rf ${backup_base}/arch*
-  rm -rf ${backup_base}/diff*
+
+  date_yesterday=`date +'%Y%m%d' -d "yesterday"`
+
+  rm -rf ${backup_base}/arch${date_yesterday}
+  s3cmd del ${s3_archive_backup}/arch${date_yesterday} --recursive
 
 }
 
 run_backup(){
   backup_home=$1
-  archive_home=$2
   backup_date=`date +'%d-%m-%Y'`
-  archive_hour=`date +"%m-%d-%Y_%H:%M"`
 
   mkdir -p ${backup_home}
-  mkdir -p ${archive_home}
+
+  backup_tag=`cat /tmp/backup_tag.log | head -2 | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//'`
+  rm -f /tmp/backup_tag.log
 
   echo "Starting backup process.. (`date +"%d/%m/%Y %H:%M"`)"
   rman target / << EOF
     configure controlfile autobackup off;
-
     run {
       allocate channel c1  device type disk maxpiecesize 10G;
       allocate channel c2  device type disk maxpiecesize 10G;
@@ -88,10 +113,8 @@ run_backup(){
       delete noprompt expired backup;
       crosscheck backup;
 
-      backup tag 'archivelog_${archive_hour}' format '${archive_home}/%d_archivelog_%e-%p.bkp' archivelog all delete input;
-      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e-%p.bkp' tag='archivelog_${backup_date}' delete input;
-      backup tag 'archivelog_${backup_date}' format '${backup_home}/%d_archivelog_%e-%p.bkp' archivelog all delete input;
-
+      delete noprompt archivelog all;
+      backup as compressed backupset incremental level 1 for recover of tag='${backup_tag}' format '${backup_home}/%d_backupset_differential_%s-%p.bkp' database;
       backup spfile format '${backup_home}/spfile.bkp';
       backup current controlfile for standby format '${backup_home}/controlfile_stdby.bkp';
       backup current controlfile format '${backup_home}/controlfile.bkp';
@@ -124,28 +147,11 @@ EOF
 
 send_to_s3(){
   backup_home=$1
-  archive_home=$2
-  s3_flag=$3
-  s3_bucket_backup=$4
-  s3_bucket_archive=$5
-  backup_dir=$6
-  archive_dir=$7
+  s3_flag=$2
+  s3_bucket_backup=$3
+  backup_dir=$4
 
   if [ "${s3_flag}" == "send_s3" ]; then
-    for file in `ls ${archive_home}`
-    do
-      if [ `s3cmd ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
-      then
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
-      fi
-
-      while [ -z `s3cmd ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `s3cmd du ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $1}'` ];
-      do
-        echo "  Currupted file. Sending again..."
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
-      done
-    done
-
     for file in `ls ${backup_home}`
     do
       if [ `s3cmd ls ${s3_bucket_backup}/${backup_dir}/ | grep ${file} | wc -l` -eq 0 ]
@@ -163,17 +169,16 @@ send_to_s3(){
 }
 
 main(){
-  backup_dir="bkp`date +\"%Y%m%d_%H%M\"`"
+  backup_dir="diff`date +\"%Y%m%d\"`"
   backup_home=$2/${backup_dir}
-  archive_dir="arch`date +\"%Y%m%d\"`"
-  archive_home=$2/${archive_dir}
+  s3_archive_backup=$5
 
   export ORACLE_SID=$1
 
-#  check_parameters $1 $2 $3 $4 $5
-#  delete_old_backups $2 ${backup_dir}
-  run_backup ${backup_home} ${archive_home}
-#  send_to_s3 ${backup_home} ${archive_home} $3 $4 $5 ${backup_dir} ${archive_dir}
+  check_parameters $1 $2 $3 $4 $5
+  delete_old_backups $2 ${backup_dir} ${s3_archive_backup}
+  run_backup ${backup_home}
+  send_to_s3 ${backup_home} $3 $4 ${backup_dir}
 }
 
 main $1 $2 $3 $4 $5
