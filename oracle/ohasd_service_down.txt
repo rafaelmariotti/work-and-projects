@@ -1,0 +1,23 @@
+#as grid user, oracle 11g
+
+/u01/app/grid/product/11.2.0/grid/perl/bin/perl -I/u01/app/grid/product/11.2.0/grid/perl/lib -I/u01/app/grid/product/11.2.0/grid/crs/install /u01/app/grid/product/11.2.0/grid/crs/install/roothas.pl -deconfig -force -verbose
+/u01/app/grid/product/11.2.0/grid/perl/bin/perl -I/u01/app/grid/product/11.2.0/grid/perl/lib -I/u01/app/grid/product/11.2.0/grid/crs/install /u01/app/grid/product/11.2.0/grid/crs/install/roothas.pl
+
+crsctl check has
+crs_stat -t
+crsctl start resource -all
+
+srvctl add asm -d +DATA,+RECO,+REDO
+srvctl config asm
+srvctl status asm
+srvctl start asm
+srvctl status asm
+
+alter diskgroup DATA mount;
+alter diskgroup RECO mount;
+alter diskgroup REDO mount;
+
+create pfile from spfile='+DATA/ASM/ASMPARAMETERFILE/REGISTRY.253.892570607';
+create spfile='+DATA' from pfile='/u01/app/grid/product/11.2.0/grid/dbs/init+ASM.ora';
+shutdown immediate;
+startup;
