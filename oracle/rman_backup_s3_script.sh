@@ -116,7 +116,7 @@ run_backup(){
 EOF
 
 sqlplus -S / as sysdba << EOF
-  create pfile='${backup_home}/pfileprodbr.ora' from spfile;
+  create pfile='${backup_home}/pfile.ora' from spfile;
 EOF
 
   echo "Done (`date +"%d/%m/%Y %H:%M"`)"
