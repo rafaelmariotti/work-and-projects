@@ -3,13 +3,25 @@
 source ~/.bash_profile
 export ORACLE_SID=${new_SID}
 
+#SPFILE
+#  change db_unique_name to new_SID
+#  keep db_name with the old_SID (for controlfile informations)
+alter system set db_unique_name='${new_SID}' scope=spfile;
+alter system set db_name='${old_SID}' scope=spfile;
+alter system set audit_file_dest='/u01/app/oracle/admin/${new_SID}/adump' scope=spfile;
+alter system set control_files='+DATA/${new_SID}/control01.ctl','+DATA/${new_SID}/control02.ctl' scope=spfile;
+alter system set db_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','+RECO/${old_SID}/','+RECO/${new_SID}/','+REDO/${old_SID}/','+REDO/${new_SID}/' scope=spfile;
+alter system set log_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','+RECO/${old_SID}/','+RECO/${new_SID}/','+REDO/${old_SID}/','+REDO/new_SID/ scope=spfile;
+
 rman target=/ << EOF
 run {
   set newname for database to '+data/${new_SID}/datafile/%b';
+  switch datafile all;
   allocate channel c1 device type disk;
   allocate channel c2 device type disk;
 
   restore database;
+  switch datafile all;
   recover database;
 
   release channel c1;
@@ -23,11 +35,11 @@ shutdown immediate;
 startup mount;
 EOF
 
-nid target=/ setname=true dbname=${new_dbname}
+nid target=/ setname=true dbname=${new_SID}
 
 sqlplus / as sysdba << EOF
 startup nomount;
-alter system set db_name='sandbox' scope=spfile;
+alter system set db_name='${new_SID}' scope=spfile;
 shutdown immediate;
 startup;
 EOF
