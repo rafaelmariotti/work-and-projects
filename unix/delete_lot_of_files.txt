@@ -1,1 +1,2 @@
 find ${directory} -type f -delete
+find ${directory} -type f -name "*.trc" | xargs rm
