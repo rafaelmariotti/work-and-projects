@@ -1,0 +1,22 @@
+CREATE OR REPLACE FORCE VIEW "DB_STATS"
+AS
+  SELECT sid,
+    serial#,
+    blocking_session,
+    username,
+    program,
+    machine,
+    status,
+    sql_id,
+    sql_exec_start,
+    floor(NVL((sysdate - sql_exec_start)*1440,0))
+    || '.'
+    || LPAD(ROUND(NVL ( MOD( (sysdate - sql_exec_start)*1440, 1 )*60 ,0)),2,'0') sql_exec_minutes,
+    wait_class,
+    wait_time,
+    seconds_in_wait state
+  FROM v$session
+  WHERE status! ='INACTIVE'
+  AND username IS NOT NULL
+  AND program NOT LIKE '%(O00_)'
+  ORDER BY sql_exec_start;

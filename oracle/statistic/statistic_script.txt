@@ -1,0 +1,72 @@
+#!/bin/bash
+
+############################################
+# script: calculate database statistics    #
+# date: 12/06/2015                         #
+# version: 1.0                             #
+# developed by: Rafael Mariotti            #
+# Call example: ./statistic_database.sh 30 #
+#   $1: estimate percent to calculate      #
+############################################
+
+source ~/.bash_profile
+
+check_parameters(){
+  echo "checking parameters... (statistic_percentage)"
+  if [ $# -le 1 ] && [ $# -gt 0 ]; then
+    if [ $1 -gt 100 ] || [ $1 -le 0 ]; then
+      echo "  ERROR(2): statistic percentage not valid (must be between 1 and 100)"
+      exit 2
+    fi
+  else
+    echo "  ERROR(1): wrong argument number"
+    exit 1
+  fi
+
+  echo "  Ok."
+  return 0
+}
+
+run_statistic(){
+  PERCENT=$1
+  echo "Starting statistic process.. (`date +"%d/%m/%Y %H:%M"`)"
+
+  sqlplus monitor/dbabionexo <<EOF
+SET serveroutput ON;
+DECLARE
+BEGIN
+  FOR object_info IN
+  (SELECT dt.owner,
+    dt.table_name
+  FROM dba_tables dt
+  WHERE lower(owner) IN ('${schemas_name}')
+  AND TEMPORARY       = 'N'
+  AND (dt.iot_type   IS NULL
+  OR dt.iot_type     != 'IOT_OVERFLOW')
+  AND table_name NOT IN
+    (SELECT table_name FROM dba_external_tables det WHERE det.owner = dt.owner
+    )
+  ORDER BY owner,
+    table_name
+  )
+  LOOP
+    BEGIN
+      dbms_stats.gather_table_stats(ownname=> object_info.owner, tabname=> object_info.table_name , CASCADE=> true, method_opt => 'FOR ALL COLUMNS', estimate_percent=>$PERCENT, degree => 10);
+      dbms_output.put_line('(success) statistic from ' || lower(object_info.owner || '.' || object_info.table_name));
+    EXCEPTION
+    WHEN OTHERS THEN
+      dbms_output.put_line('error calculating statistic from ' || object_info.owner ||'.' || object_info.table_name || ': ' || sqlerrm);
+    END;
+  END LOOP;
+END;
+/
+EOF
+  echo "Done (`date +"%d/%m/%Y %H:%M"`)"
+}
+
+main(){
+  check_parameters $1
+  run_statistic $1
+}
+
+main $1

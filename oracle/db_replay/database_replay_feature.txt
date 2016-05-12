@@ -1,0 +1,103 @@
+#on source database machine, issue the following commands
+sqlplus / as sysdba << EOF
+  create or replace directory db_replay_capture_dir as '${db_replay_directory}';
+
+--start capture by user
+  BEGIN
+    DBMS_WORKLOAD_CAPTURE.ADD_FILTER (fname      => 'filter_by_user_test_capture_1',
+                                      fattribute => 'USER',
+                                      fvalue     => '${username}'
+                                      );
+  
+    DBMS_WORKLOAD_CAPTURE.start_capture (name           => 'capture_1', 
+                                         dir            => 'DB_REPLAY_CAPTURE_DIR',
+                                         duration       => NULL,
+                                         default_action => 'EXCLUDE' 
+                                         );
+  END;
+/
+  select * from DBA_WORKLOAD_FILTERS;
+
+--to finish capture
+  BEGIN
+    DBMS_WORKLOAD_CAPTURE.finish_capture;
+  END;
+/
+
+--get workload info
+  SELECT DBMS_WORKLOAD_CAPTURE.get_capture_info('DB_REPLAY_CAPTURE_DIR') FROM dual;
+  SELECT id, name FROM dba_workload_captures where id in (SELECT DBMS_WORKLOAD_CAPTURE.get_capture_info('DB_REPLAY_CAPTURE_DIR') FROM dual);
+
+--generate html information about the caputre process
+  DECLARE
+    l_report  CLOB;
+  BEGIN
+    l_report := DBMS_WORKLOAD_CAPTURE.report(capture_id => 66,
+                                             format     => DBMS_WORKLOAD_CAPTURE.TYPE_HTML);
+  END;
+/
+
+EOF
+
+#copy all files that was generated at your ${db_replay_directory} to your target machine
+#issue the following commands
+
+sqlplus / as sysdba << EOF
+  create or replace directory DB_REPLAY_CAPTURE_DIR as '${db_replay_directory}';
+
+  BEGIN
+    DBMS_WORKLOAD_REPLAY.process_capture('DB_REPLAY_CAPTURE_DIR');
+  END;
+/
+
+  BEGIN
+    DBMS_WORKLOAD_REPLAY.initialize_replay (replay_name => 'database_replay_1',
+                                            replay_dir  => 'DB_REPLAY_CAPTURE_DIR');
+
+    DBMS_WORKLOAD_REPLAY.prepare_replay (synchronization => TRUE);
+  END;
+/
+EOF
+
+#before start your replay test, you need to execute the 'wrc' command, which is going to simulate all the people that have been sending requests to your database. It is highly recommended that you do it from another machine, to ensure that eighter workload from this command will not impact your test
+$ wrc mode=calibrate replaydir=$${db_replay_directory} 
+
+#Check the output message. It will tell you how many commands you need to execute, and witch how many process per cpu. Configure the following command with the instructions. For example, on my test it returned "Consider using at least 6 clients divided among 2 CPU(s)", so I need to execute the command 6 times (in background - screen perhaps) with parameter process_per_cpu equal 2
+$ wrc system/${system_password}@${tns_target_database} mode=replay process_per_cpu=${number_of_cpus} replaydir=${db_replay_directory}
+
+#to start workload replay
+sqlplus / as sysdba << EOF
+  BEGIN
+    DBMS_WORKLOAD_REPLAY.start_replay;
+  END;
+/
+EOF
+
+#to cancel workload replay
+sqlplus / as sysdba << EOF
+  BEGIN
+    DBMS_WORKLOAD_REPLAY.cancel_replay;
+  END;
+/
+EOF
+
+#to check all replays running
+SELECT id, name FROM dba_workload_replays;
+
+#to generate a report about a replay
+sqlplus / as sysdba << EOF
+  DECLARE
+    l_report  CLOB;
+  BEGIN
+    l_report := DBMS_WORKLOAD_REPLAY.report(replay_id => ${replay_id_from_dba_workload_replays},
+                                            format    => DBMS_WORKLOAD_REPLAY.TYPE_HTML);
+  END;
+/
+
+#to delete a filter
+sqlplus / as sysdba << EOF
+  BEGIN
+    DBMS_WORKLOAD_CAPTURE.DELETE_FILTER (filter_name  => '${filter_name}');
+  END;
+/
+

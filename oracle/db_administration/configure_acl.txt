@@ -1,0 +1,24 @@
+#list existing acls and their privileges
+select * from DBA_NETWORK_ACLS;
+select * from DBA_NETWORK_ACL_PRIVILEGES;
+
+#creating acl to connect on any host, doing tcp and http calls
+BEGIN
+  dbms_network_acl_admin.CREATE_ACL(acl => '${config_name}.xml', description => 'HTTP ACL', principal => '${database_user}', is_grant => true, privilege => 'connect');
+  dbms_network_acl_admin.ADD_PRIVILEGE(acl => '${config_name}.xml', principal => '${database_user}', is_grant => true, privilege => 'resolve');
+  DBMS_NETWORK_ACL_ADMIN.ASSIGN_ACL(acl => '${config_name}.xml',
+  host => '*');
+END;
+/
+
+GRANT EXECUTE ON utl_tcp TO ${database_user};
+GRANT EXECUTE ON utl_http TO ${database_user};
+
+#droping acl and privileges
+BEGIN
+  dbms_network_acl_admin.UNASSIGN_ACL(host => '/sys/acls/${config_name}.xml');
+  dbms_network_acl_admin.DROP_ACL('/sys/acls/${config_name}.xml');
+  dbms_network_acl_admin.DELETE_PRIVILEGE ( acl => '${config_name}.xml', principal => '${database_user}');
+END;
+/
+
