@@ -16,7 +16,6 @@ alter system set log_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','
 rman target=/ << EOF
 run {
   set newname for database to '+data/${new_SID}/datafile/%b';
-  switch datafile all;
   allocate channel c1 device type disk;
   allocate channel c2 device type disk;
 
