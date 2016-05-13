@@ -86,9 +86,10 @@ run_backup(){
       allocate channel c16 device type disk maxpiecesize 10G;
 
       delete noprompt expired backup;
+      delete noprompt archivelog all;
       crosscheck backup;
+      crosscheck archivelog all;
 
-      backup tag 'archivelog_${archive_hour}' format '${archive_home}/%d_archivelog_%e-%p.bkp' archivelog all delete input;
       backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e-%p.bkp' tag='archivelog_${backup_date}' delete input;
       backup tag 'archivelog_${backup_date}' format '${backup_home}/%d_archivelog_%e-%p.bkp' archivelog all delete input;
 
