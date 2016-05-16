@@ -1,28 +1,35 @@
-#visualize all volumns groups created
+#create a physical volume with LVM
+pvscan
+pvcreate /dev/${disk1} /dev/${disk2} ...
+
+#create a volumn group and active
+vgcreate ${vgroup_name} /dev/${disk1} /dev/${disk2} ...
+vgchange -ay ${vgroup_name}
+
+#create a logical volumn
+lvcreate -L ${size${M|G|T}} ${vgroup_name} -n ${lvm_name}
+
+#set file system
+mkfs.${extention} /dev/${vgroup_name}/${lvm_name}
+
+#mount file system
+mount /dev/${vgroup_name}/${lvm_name} ${mount_point}
+  #or
+/dev/${vgroup_name}/${lvm_name} ${mount_point} ${extention} defaults 0 1
+
+#visualize all volumns group created
 vgs
 
-#visualize all logical volumns created
+#visualize all lvm created
 lvs
 
-#create a logical group volumn
-vgcreate ${group_name} ${device_partition}
+#increasing a volumn group size
+pvcreate /dev/${disk}
+vgextend ${vgroup_name} /dev/${disk}
 
-#create a logical volumn using a logical group volumn
-lvcreate -L ${size}gb -n ${volumn_name} ${group_name}
-
-#format your new volumn file system
-mkfs.${extention} /dev/mapper/${group_name}-${volumn_name}
-
-#add a new entry in /etc/fstab to automatic startup when reboot
-/dev/mapper/${group_name}-${volumn_name} ${mount_point_dir} ${extention} defaults 0 1
-
-#increasing a logical group volumn size
-pvcreate ${device_partition}
-vgextend ${group_name} ${device_partition}
-
-#increasing a logical volumn size
+#increasing a lvm size
 umount -l ${mount_point_dir}
-lvextend -L +${size_to_add}M /dev/mapper/${group_name}-${volumn_name}
-e2fsck /dev/mapper/${group_name}-${volumn_name}     #test partition
-resize2fs /dev/mapper/${group_name}-${volumn_name}  #resize your partition permanently (dont be afraid, it will not erase your data)
+lvextend -L +${size_to_add${M|G|T}} /dev/${vgroup_name}/${lvm_name}
+e2fsck /dev/${vgroup_name}/${lvm_name} #test partition
+resize2fs /dev/${vgroup_name}/${lvm_name} #resize your partition permanently (dont be afraid, it will not erase your data)
 mount ${mount_point_dir}
