@@ -1,0 +1,6 @@
+#flush entire shared pool
+alter system flush shared_pool;
+
+#flush specific sql plan inside shared pool
+select address, hash_value from v$sql where sql_id = '${sql_id}';
+exec sys.DBMS_SHARED_POOL.PURGE('${address},${hash_value}', 'C');
