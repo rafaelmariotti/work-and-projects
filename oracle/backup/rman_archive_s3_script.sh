@@ -75,20 +75,20 @@ send_to_s3(){
   s3_bucket_archive=$3
   archive_dir=$4
 
-  s3cmd del ${s3_bucket}/${backup_dir}/controlfile.bkp
+  aws s3 rm ${s3_bucket}/${backup_dir}/controlfile.bkp --quiet
 
   if [ "${s3_flag}" == "send_s3" ]; then
     for file in `ls ${archive_home}`
     do
-      if [ `s3cmd ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
+      if [ `aws s3 ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
       then
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
+        aws s3 cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
       fi
 
-      while [ -z `s3cmd ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `s3cmd du ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $1}'` ];
+      while [ -z `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $3}'` ];
       do
         echo "  Currupted file. Sending again..."
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
+        aws cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
       done
     done
   fi

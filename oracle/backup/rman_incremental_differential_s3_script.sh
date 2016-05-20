@@ -76,7 +76,7 @@ EOF
   date_yesterday=`date +'%Y%m%d' -d "yesterday"`
 
   rm -rf ${backup_base}/arch${date_yesterday}
-  s3cmd del ${s3_archive_backup}/arch${date_yesterday} --recursive
+  aws s3 rm ${s3_archive_backup}/arch${date_yesterday} --recursive
 
 }
 
@@ -93,22 +93,8 @@ run_backup(){
   rman target / << EOF
     configure controlfile autobackup off;
     run {
-      allocate channel c1  device type disk maxpiecesize 10G;
-      allocate channel c2  device type disk maxpiecesize 10G;
-      allocate channel c3  device type disk maxpiecesize 10G;
-      allocate channel c4  device type disk maxpiecesize 10G;
-      allocate channel c5  device type disk maxpiecesize 10G;
-      allocate channel c6  device type disk maxpiecesize 10G;
-      allocate channel c7  device type disk maxpiecesize 10G;
-      allocate channel c8  device type disk maxpiecesize 10G;
-      allocate channel c9  device type disk maxpiecesize 10G;
-      allocate channel c10 device type disk maxpiecesize 10G;
-      allocate channel c11 device type disk maxpiecesize 10G;
-      allocate channel c12 device type disk maxpiecesize 10G;
-      allocate channel c13 device type disk maxpiecesize 10G;
-      allocate channel c14 device type disk maxpiecesize 10G;
-      allocate channel c15 device type disk maxpiecesize 10G;
-      allocate channel c16 device type disk maxpiecesize 10G;
+      allocate channel c1 device type disk maxpiecesize 10G;
+      allocate channel c2 device type disk maxpiecesize 10G;
 
       delete noprompt expired backup;
       delete noprompt archivelog all;
@@ -124,25 +110,11 @@ run_backup(){
 
       release channel c1;
       release channel c2;
-      release channel c3;
-      release channel c4;
-      release channel c5;
-      release channel c6;
-      release channel c7;
-      release channel c8;
-      release channel c9;
-      release channel c10;
-      release channel c11;
-      release channel c12;
-      release channel c13;
-      release channel c14;
-      release channel c15;
-      release channel c16;
   }
 EOF
 
 sqlplus -S / as sysdba << EOF
-  create pfile='${backup_home}/pfileprodbr.ora' from spfile;
+  create pfile='${backup_home}/pfile.ora' from spfile;
 EOF
 
   echo "Done (`date +"%d/%m/%Y %H:%M"`)"
@@ -157,15 +129,15 @@ send_to_s3(){
   if [ "${s3_flag}" == "send_s3" ]; then
     for file in `ls ${backup_home}`
     do
-      if [ `s3cmd ls ${s3_bucket_backup}/${backup_dir}/ | grep ${file} | wc -l` -eq 0 ]
+      if [ `aws s3 ls ${s3_bucket_backup}/${backup_dir}/ | grep ${file} | wc -l` -eq 0 ]
       then
-        s3cmd put ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
+        aws s3 cp ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
       fi
 
-      while [ -z `s3cmd ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${backup_home} | grep ${file} | awk '{print $5}'` -ne `s3cmd du ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $1}'` ];
+      while [ -z `aws s3 ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${backup_home} | grep ${file} | awk '{print $5}'` -ne `aws s3 ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $3}'` ];
       do
         echo "  Currupted file. Sending again..."
-        s3cmd put ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
+        aws s3 cp ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
       done
     done
   fi

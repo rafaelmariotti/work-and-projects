@@ -38,7 +38,7 @@ delete_old_backups(){
   backup_dir=$2
   for directory in `ls ${backup_base} | grep "bkp" | grep -v "${backup_dir}"`
   do
-    if [ -z `ps aux | grep "s3cmd" | grep "${directory}"` ]; then
+    if [ -z `ps aux | grep "aws s3" | grep "${directory}"` ]; then
       echo "  directory ${directory} deleted"
       rm -rf ${backup_base}/${directory}
     fi
@@ -135,29 +135,29 @@ send_to_s3(){
   if [ "${s3_flag}" == "send_s3" ]; then
     for file in `ls ${archive_home}`
     do
-      if [ `s3cmd ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
+      if [ `aws s3 ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
       then
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
+        aws s3 cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
       fi
 
-      while [ -z `s3cmd ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `s3cmd du ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $1}'` ];
+      while [ -z `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $3}'` ];
       do
         echo "  Currupted file. Sending again..."
-        s3cmd put ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
+        aws s3 cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file}
       done
     done
 
     for file in `ls ${backup_home}`
     do
-      if [ `s3cmd ls ${s3_bucket_backup}/${backup_dir}/ | grep ${file} | wc -l` -eq 0 ]
+      if [ `aws s3 ls ${s3_bucket_backup}/${backup_dir}/ | grep ${file} | wc -l` -eq 0 ]
       then
-        s3cmd put ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
+        aws s3 cp ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
       fi
 
-      while [ -z `s3cmd ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${backup_home} | grep ${file} | awk '{print $5}'` -ne `s3cmd du ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $1}'` ];
+      while [ -z `aws s3 ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${backup_home} | grep ${file} | awk '{print $5}'` -ne `aws s3 ls ${s3_bucket_backup}/${backup_dir}/${file} | awk '{print $3}'` ];
       do
         echo "  Currupted file. Sending again..."
-        s3cmd put ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
+        aws s3 cp ${backup_home}/$file ${s3_bucket_backup}/${backup_dir}/
       done
     done
   fi
@@ -171,10 +171,10 @@ main(){
 
   export ORACLE_SID=$1
 
-#  check_parameters $1 $2 $3 $4 $5
-#  delete_old_backups $2 ${backup_dir}
+  check_parameters $1 $2 $3 $4 $5
+  delete_old_backups $2 ${backup_dir}
   run_backup ${backup_home} ${archive_home}
-#  send_to_s3 ${backup_home} ${archive_home} $3 $4 $5 ${backup_dir} ${archive_dir}
+  send_to_s3 ${backup_home} ${archive_home} $3 $4 $5 ${backup_dir} ${archive_dir}
 }
 
 main $1 $2 $3 $4 $5
