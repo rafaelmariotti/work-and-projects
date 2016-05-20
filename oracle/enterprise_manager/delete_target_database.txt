@@ -1,0 +1,9 @@
+#enterprise manager
+emcli login -username=sysman -password=${pass}
+emcli delete_target -name="${target_database_dns}:3872" -type="oracle_emd" -delete_monitored_targets -async
+
+#agent
+/u01/app/agent/core/12.1.0.4.0/oui/bin/runInstaller -silent -deinstall -removeallfiles "REMOVE_HOMES={/u01/app/agent/plugins/oracle.sysman.db.agent.plugin_12.1.0.6.0,/u01/app/agent/plugins/oracle.sysman.db.discovery.plugin_12.1.0.6.0,/u01/app/agent/plugins/oracle.sysman.emas.discovery.plugin_12.1.0.6.0,/u01/app/agent/plugins/oracle.sysman.oh.agent.plugin_12.1.0.4.0,/u01/app/agent/plugins/oracle.sysman.oh.discovery.plugin_12.1.0.4.0,/u01/app/agent/plugins/oracle.sysman.xa.discovery.plugin_12.1.0.6.0}" -invPtrLoc /u01/app/oraInventory/oraInst.loc
+/u01/app/agent/core/12.1.0.4.0/oui/bin/runInstaller -silent -deinstall -removeallfiles "REMOVE_HOMES={/u01/app/agent/sbin}" -invPtrLoc /u01/app/oraInventory/oraInst.loc
+/u01/app/agent/core/12.1.0.4.0/oui/bin/runInstaller -silent -deinstall -removeallfiles "REMOVE_HOMES={/u01/app/agent/core/12.1.0.4.0/}" -invPtrLoc /u01/app/oraInventory/oraInst.loc
+

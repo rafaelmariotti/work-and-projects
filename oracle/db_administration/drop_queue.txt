@@ -1,0 +1,3 @@
+exec dbms_aqadm.stop_queue('${queue_name}') ;
+exec dbms_aqadm.drop_queue('${queue_name}') ;
+exec dbms_aqadm.drop_queue_table('${queue_name}', true) ; --force=true

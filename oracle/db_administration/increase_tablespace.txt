@@ -1,0 +1,2 @@
+alter tablespace ${tablespace_name} add datafile '+DATA' size 128m autoextend on next 128m maxsize 8192m;
+alter tablespace ${temp_tablespace_name} add tempfile '+DATA' size 128m autoextend on next 128m maxsize 8192m;

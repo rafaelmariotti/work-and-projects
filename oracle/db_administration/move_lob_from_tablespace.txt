@@ -1,0 +1,1 @@
+alter table ${table} move lob (${column_name}) store as (tablespace ${new_tablespace});

@@ -1,0 +1,16 @@
+SELECT *
+FROM
+  (SELECT FIRST_LOAD_TIME,
+    LAST_LOAD_TIME,
+    executions,
+    parsing_schema_name,
+    TO_CHAR((ELAPSED_TIME/(1000000))/executions, '0.99999')
+    || ' segundos' AS AVG_TIME,
+    MODULE,
+    SQL_FULLTEXT
+  FROM V$SQL
+  WHERE parsing_schema_name='${schema_name}'
+    --and executions > 1000
+  ORDER BY (ELAPSED_TIME/(1000000))/executions DESC
+  )
+WHERE ROWNUM <= 10;

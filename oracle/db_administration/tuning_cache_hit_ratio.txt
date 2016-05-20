@@ -1,14 +1,12 @@
 #connect as sysdba
-SELECT 100*(1 - (v3.value / (v1.value + v2.value))) "Cache Hit Ratio [%]"
-FROM v$sysstat v1,
-  v$sysstat v2,
-  v$sysstat v3
-WHERE v1.name = 'db block gets'
-AND v2.name   = 'consistent gets'
-AND v3.name   = 'physical reads';
-SELECT name,
-  physical_reads,
-  db_block_gets,
-  consistent_gets,
-  (1 - (physical_reads / (db_block_gets + consistent_gets)))*100 "Hit Ratio"
-FROM V$BUFFER_POOL_STATISTICS;
+SELECT ROUND((1- ( SUM(DECODE(name,'physical reads cache', VALUE,0)) / ( SUM(DECODE(name, 'db block gets from cache', VALUE,0))+ SUM(DECODE(name, 'consistent gets from cache', VALUE, 0))) ))*100 ,2)
+  || '%' "Buffer Cache Hit Ratio"
+FROM V$SYSSTAT;
+
+SELECT NAME,
+  PHYSICAL_READS,
+  DB_BLOCK_GETS,
+  CONSISTENT_GETS,
+  ROUND((1- (PHYSICAL_READS / (DB_BLOCK_GETS + CONSISTENT_GETS)) )*100, 2) "Total Hit Ratio %"
+FROM V$BUFFER_POOL_STATISTICS; 
+

@@ -1,0 +1,1 @@
+/u01/app/oracle/Middleware/oms/bin/emcli import_update -omslocal -file="${pluggin_zip}"

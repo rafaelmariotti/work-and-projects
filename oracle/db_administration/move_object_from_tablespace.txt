@@ -1,0 +1,220 @@
+CREATE OR REPLACE
+PROCEDURE PROC_MOVE_TABLES(
+    TABLE_NAME         VARCHAR2,
+    NEW_TABLESPACE VARCHAR2)
+IS
+  vTabela 		VARCHAR2(40) := TABLE_NAME;
+  vTablespace 	VARCHAR2(40) := NEW_TABLESPACE;
+  vValida NUMBER;
+  vQuery  VARCHAR2(4000);
+BEGIN
+  SELECT COUNT(*)
+  INTO vValida
+  FROM user_tables
+  WHERE table_name = upper(vTabela);
+  IF (vValida      = 0) THEN
+    dbms_output.put_line('NAO EXISTE TABLE_NAME ' || vTabela);
+  ELSE
+    IF (vTablespace IS NULL) THEN
+      vQuery           := 'alter table "'||vTabela||'" move';
+      dbms_output.put_line(vQuery);
+      BEGIN
+        EXECUTE immediate vQuery;
+        FOR c IN
+        (SELECT index_name
+        FROM user_indexes
+        WHERE table_name    = upper(vTabela)
+        AND index_type NOT IN ('LOB')
+        )
+        LOOP
+          vQuery := 'alter index "'||c.index_name||'" rebuild';
+          dbms_output.put_line(vQuery);
+          EXECUTE immediate vQuery;
+        END LOOP;
+      EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*   BEGIN ERROR    *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('   ' || vQuery);
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*    END ERROR     *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+      END;
+    ELSE
+      vQuery := 'alter table "'||vTabela||'" move tablespace '||vTablespace;
+      dbms_output.put_line(vQuery);
+      BEGIN
+        EXECUTE immediate vQuery;
+        FOR c IN
+        (SELECT index_name
+        FROM user_indexes
+        WHERE table_name    = upper(vTabela)
+        AND index_type NOT IN ('LOB')
+        )
+        LOOP
+          vQuery := 'alter index "'||c.index_name||'" rebuild';
+          dbms_output.put_line(vQuery);
+          EXECUTE immediate vQuery;
+        END LOOP;
+      EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*   BEGIN ERROR    *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('   ' || vQuery);
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*    END ERROR     *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+      END;
+    END IF;
+  END IF;
+END;
+/
+--------------
+CREATE OR REPLACE
+PROCEDURE PROC_MOVE_TABLES_LOB(
+    TABLE_NAME            VARCHAR2,
+    COLUMN_TABLE_NAME     VARCHAR2 ,
+    DATA_TYPE       VARCHAR2,
+    NEW_TABLESPACE VARCHAR2)
+IS
+  vTabela     VARCHAR2(40) := TABLE_NAME;
+  vColuna     VARCHAR2(50) :=COLUMN_TABLE_NAME;
+  vColunaTipo VARCHAR2(50) :=DATA_TYPE;
+  vTablespace VARCHAR2(50) := NEW_TABLESPACE;
+  vValida     NUMBER;
+  vQuery      VARCHAR2(4000);
+BEGIN
+  SELECT COUNT(*)
+  INTO vValida
+  FROM user_tables
+  WHERE table_name = upper(vTabela);
+  IF (vValida      = 0) THEN
+    dbms_output.put_line('NAO EXISTE TABLE_NAME ' || vTabela);
+  ELSE
+    vQuery := 'alter table "'||vTabela||'" move ' || vColunaTipo || '(' || vColuna || ') store as (tablespace ' || vTablespace || ')';
+    dbms_output.put_line(vQuery);
+    BEGIN
+      EXECUTE immediate vQuery;
+    EXCEPTION
+    WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('********************');
+      DBMS_OUTPUT.PUT_LINE('*   BEGIN ERROR    *');
+      DBMS_OUTPUT.PUT_LINE('********************');
+      DBMS_OUTPUT.PUT_LINE('   ' || vQuery);
+      DBMS_OUTPUT.PUT_LINE('********************');
+      DBMS_OUTPUT.PUT_LINE('*    END ERROR     *');
+      DBMS_OUTPUT.PUT_LINE('********************');
+    END;
+  END IF;
+END;
+/
+
+CREATE OR REPLACE
+PROCEDURE PROC_MOVE_INDEXES(
+    INDEX_NAME         VARCHAR2,
+    NEW_TABLESPACE     VARCHAR2)
+IS
+  vIndex      VARCHAR2(40) := INDEX_NAME;
+  vTablespace VARCHAR2(40) := NEW_TABLESPACE;
+  vValida NUMBER;
+  vQuery  VARCHAR2(4000);
+BEGIN
+  SELECT COUNT(*)
+  INTO vValida
+  FROM user_indexes
+  WHERE index_name = upper(vIndex);
+  IF (vValida      = 0) THEN
+    dbms_output.put_line('NAO EXISTE INDEX ' || vIndex);
+  ELSE
+    IF (vTablespace IS NULL) THEN
+      vQuery           := 'alter index "'||vIndex||'" rebuild';
+      dbms_output.put_line(vQuery);
+      BEGIN
+        EXECUTE immediate vQuery;
+      EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*   BEGIN ERROR    *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('   ' || vQuery);
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*    END ERROR     *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+      END;
+    ELSE
+      vQuery := 'alter index "'||vIndex||'" rebuild tablespace ' || vTablespace;
+      dbms_output.put_line(vQuery);
+      BEGIN
+        EXECUTE immediate vQuery;
+      EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*   BEGIN ERROR    *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('   ' || vQuery);
+        DBMS_OUTPUT.PUT_LINE('********************');
+        DBMS_OUTPUT.PUT_LINE('*    END ERROR     *');
+        DBMS_OUTPUT.PUT_LINE('********************');
+      END;
+    END IF;
+  END IF;
+END;
+/
+
+------------------
+-- HOW TO EXECUTE -
+------------------
+
+SET SERVEROUTPUT ON;
+DECLARE
+  NEW_TABLESPACE_NAME_DATA VARCHAR2(50) :='DATA_APEX_ESPANHA';
+  NEW_TABLESPACE_NAME_INDEX VARCHAR2(50) :='INDEX_APEX_ESPANHA';
+BEGIN
+  FOR T1 IN
+  (SELECT table_name,
+    column_name,
+    CASE
+      WHEN DATA_TYPE LIKE '%LOB'
+      THEN 'LOB'
+    END AS "DATA_TYPE"
+  FROM user_tab_columns
+  WHERE (data_type LIKE '%LOB'
+  OR data_type   IN ('LONG'))
+  AND table_name IN
+    (SELECT table_name
+    FROM user_tables
+    WHERE tablespace_name NOT IN (NEW_TABLESPACE_NAME_DATA)
+    )
+  )
+  LOOP
+    PROC_MOVE_TABLES_LOB(T1.TABLE_NAME, T1.COLUMN_NAME, T1.DATA_TYPE, NEW_TABLESPACE_NAME_DATA);
+  END LOOP;
+  FOR T1 IN
+  (SELECT DISTINCT ut.table_name,
+    tablespace_name
+  FROM user_tables ut
+  WHERE ut.iot_name          IS NULL
+  AND ut.tablespace_name NOT IN (NEW_TABLESPACE_NAME_DATA)
+  )
+  LOOP
+    PROC_MOVE_TABLES(T1.TABLE_NAME, NEW_TABLESPACE_NAME_DATA);
+  END LOOP;
+  
+  FOR T1 IN
+  (SELECT index_name
+  FROM user_indexes
+  WHERE index_type NOT    IN ('LOB')
+  AND tablespace_name NOT IN (NEW_TABLESPACE_NAME_INDEX)
+  )
+  LOOP
+    PROC_MOVE_INDEXES(T1.INDEX_NAME, NEW_TABLESPACE_NAME_INDEX);
+  END LOOP;
+  
+END;
+/
+
+SELECT DISTINCT TABLESPACE_NAME FROM USER_TABLES;
+
+SELECT DISTINCT TABLESPACE_NAME FROM USER_INDEXES;

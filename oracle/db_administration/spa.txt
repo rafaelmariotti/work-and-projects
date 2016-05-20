@@ -1,0 +1,86 @@
+--Executar os seguintes comandos no Host principal
+
+BEGIN
+  DBMS_SQLTUNE.CREATE_SQLSET(sqlset_name => 'SQLTUNINGSET_20150226_1028');
+END;
+/
+
+--@?/rdbms/admin/awrrpt.sql; --auxilio para o start/end_snap_id
+exec  DBMS_WORKLOAD_REPOSITORY.create_baseline( start_snap_id => 30594, end_snap_id => 30604, baseline_name => 'baseline_20150226_1028');
+
+DECLARE
+ baseline_cursor DBMS_SQLTUNE.SQLSET_CURSOR;
+BEGIN
+ OPEN baseline_cursor FOR
+    SELECT VALUE(p)
+    FROM TABLE (DBMS_SQLTUNE.SELECT_WORKLOAD_REPOSITORY(
+        'baseline_20150226_1028', NULL, NULL, 'elapsed_time',  NULL,
+         NULL, NULL, 1000)) p;
+    DBMS_SQLTUNE.LOAD_SQLSET(
+             sqlset_name     => 'SQLTUNINGSET_20150226_1028',
+             populate_cursor => baseline_cursor);
+END;
+/
+
+EXEC  DBMS_SQLTUNE.create_stgtab_sqlset(table_name      => 'SQLSET_TAB_20150226_1028');
+
+BEGIN 
+  DBMS_SQLTUNE.pack_stgtab_sqlset(
+  sqlset_name => 'SQLTUNINGSET_20150226_1028', 
+  staging_table_name => 'SQLSET_TAB_20150226_1028');
+END; 
+/ 
+
+
+VARIABLE v_task VARCHAR2(64);
+
+EXEC :v_task :=  DBMS_SQLPA.create_analysis_task(sqlset_name => 'SQLTUNINGSET_20150226_1028');
+
+BEGIN
+  DBMS_SQLPA.execute_analysis_task(
+    task_name       => :v_task,
+    execution_type  => 'test execute',
+    execution_name  => 'oda-20150226_1029');
+END;
+/
+
+--export da tabela gerada com os dados
+
+exp rmariotti tables=SQLSET_TAB_20150414_1000 file=SQLSET_TAB_20150414_1000.dmp
+
+--import da tabela de dados no host alvo
+imp rmariotti file=SQLSET_TAB_20150414_1000.dmp tables=SQLSET_TAB_20150414_1000
+
+--No BD do Cloud Control, executar
+
+VARIABLE v_task VARCHAR2(64);
+
+EXEC :v_task := 'TASK_94779'; --task no cloud control
+
+BEGIN
+  DBMS_SQLPA.execute_analysis_task(
+    task_name       => :v_task,
+    execution_type  => 'test execute',
+    execution_name  => 'dataguard-20150226_1028');
+END;
+/
+
+-------------
+
+begin
+DBMS_SQLPA.EXECUTE_ANALYSIS_TASK(
+   task_name        => 'TASK_94779',
+   execution_type   => 'COMPARE PERFORMANCE',
+   execution_name   => 'spa_20150226_1028_elapsed_time',
+   execution_params => dbms_advisor.arglist(
+         'comparison_metric',
+         'optimizer_cost'));
+end;
+/
+
+--elapsed_time
+--user_io_time
+--cpu_time
+--buffer_gets
+--optimizer_cost
+

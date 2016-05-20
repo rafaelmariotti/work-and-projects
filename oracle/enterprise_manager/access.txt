@@ -1,0 +1,5 @@
+#weblogic
+https://${dns}:7102/console/
+
+#enterprise manager
+https://${dns}:7802/em/

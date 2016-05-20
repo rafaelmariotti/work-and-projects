@@ -1,0 +1,8 @@
+#open dataguard to rw
+dgmgrl /
+  convert database ${dataguard_SID} to snapshot standby;
+
+#close dataguard to read and apply
+dgmgrl /
+  connect sys/${sys_password}
+  convert database ${dataguard_SID} to physical standby;

@@ -1,0 +1,19 @@
+SELECT a.sid blocker_sid,
+  a.serial#,
+  a.username blocker_username,
+  a.logon_time ,
+  b.type ,
+  b.lmode mode_held,
+  b.ctime time_waited,
+  c.sid wait_sid,
+  c.request request_mode,
+  c.ctime time_waited
+FROM v$lock b,
+  v$enqueue_lock c,
+  v$session a
+WHERE a.sid   = b.sid
+AND b.id1     = c.id1 (+)
+AND b.id2     = c.id2 (+)
+AND c.type(+) = 'TX'
+AND b.type    = 'TX'
+AND b.block   = 1;

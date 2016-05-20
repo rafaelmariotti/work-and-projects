@@ -1,0 +1,11 @@
+#WARNING!
+#this is a way to fix a bug, not the correct way to drop queues and queue tables
+
+#drop queue table:
+  alter session set events '10851 trace name context forever, level 2';
+  exec DBMS_AQADM.DROP_QUEUE_TABLE('${queue_table_name}');
+  exec exec DBMS_AQADM.DROP_QUEUE('${queue_name}');
+
+#drop evaluation context:
+  alter session set events '25475 trace name context forever, level 2';
+  exec DBMS_RULE_ADM.DROP_EVALUATION_CONTEXT('${schema}.${queue_name}', TRUE);

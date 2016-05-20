@@ -1,0 +1,26 @@
+#manual switch over
+#
+#1st: primary database
+sqlplus / as sysdba
+  alter database commit to switchover to standby;
+  --or execute to force all sessions to shutdown
+  --alter database commit to switchover to physical standby with session shutdown;
+  shutdown immediate;
+  startup nomount;
+  alter database mount standby database;
+  alter database recover managed standby database disconnect from session;
+
+#2nd: standby database
+sqlplus / as sysdba
+  alter database commit to switchover to primary;
+  --or execute to force all sessions to shutdown
+  --alter database commit to switchover to primary with session shutdown;
+  shutdown immediate;
+  startup;
+
+#
+#
+#switch over using broker
+
+dgmgrl sys/${primary_password}@${tns_primary}
+  switchover to ${standby_name}

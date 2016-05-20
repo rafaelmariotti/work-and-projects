@@ -1,0 +1,7 @@
+select * from dba_sql_profiles;
+
+begin
+  dbms_sqltune.alter_sql_profile('SYS_SQLPROF_0248e6e5421e0004', 'STATUS', 'DISABLED');
+  dbms_sqltune.alter_sql_profile('SYS_SQLPROF_0248e6e5421e0004', 'STATUS', 'ENABLED');
+end; 
+/

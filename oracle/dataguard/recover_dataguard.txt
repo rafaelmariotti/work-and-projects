@@ -1,0 +1,80 @@
+#restore and recover (full)
+
+##primary node##
+dgmgrl /
+  edit database ${primary_SID} set state='transport-off';
+  edit database ${standby_SID} set state='apply-off';
+  disable database ${standby_SID};
+  disable configuration; 
+
+sqlplus / as sysdba
+  shutdown immediate;
+
+asmcmd
+  cd DATA
+  cd ${standby_SID}
+  rm -rf DATAFILE
+  rm -rf TEMPFILE
+  rm -rf ONLINELOG
+
+rman target sys/${primary_password}@${primary_tns} auxiliary=/
+  duplicate target database for standby nofilenamecheck dorecover;
+
+rman target=/
+  catalog start with '${backup_and_archive_log_dir}';
+  recover database;
+
+#primary
+dgmgrl /
+  enable configuration;
+  enable database ${standby_SID};
+  edit database ${standby_SID} set state='apply-on';
+  edit database ${primary_SID} set state='transport-on';
+
+sqlplus / as sysdba
+  shutdown immediate;
+  startup mount;
+  alter database open read only;
+
+#
+#
+#just to recover standby
+
+##primary node##
+dgmgrl /
+  edit database ${primary_SID} set state='transport-off';
+  edit database ${standby_SID} set state='apply-off';
+  disable database ${standby_SID};
+  disable configuration;
+
+sqlplus / as sysdba
+  shutdown immediate;
+  startup mount;
+
+rman target=/
+  catalog start with '${backup_and_archive_log_dir}';
+  recover database;
+
+#primary
+dgmgrl /
+  enable configuration;
+  enable database ${standby_SID};
+  edit database ${standby_SID} set state='apply-on';
+  edit database ${primary_SID} set state='transport-on';
+
+sqlplus / as sysdba
+  alter database open read only;
+
+#
+#
+#recover manually
+sqlplus / as sysdba
+  startup mount;
+
+rman target=/
+  catalog start with '${backup_and_archive_log_dir}';
+  recover database;
+
+sqlplus / as sysdba
+  alter database recover managed standby database cancel;
+

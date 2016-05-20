@@ -1,0 +1,16 @@
+select * from dba_hist_snapshot
+order by begin_interval_time desc;
+	
+--or
+
+select * from dba_hist_snapshot
+where to_char(BEGIN_INTERVAL_TIME, 'DD/MM/YYYY HH24:MI') ='05/12/2012 10:30'
+order by instance_number, begin_interval_time;
+
+--FOR EXAMPLE:
+--SNAP_ID_BEGIN: 183029
+--SNAP_ID_END: 183030
+--DBID 728837302
+
+select * from table(dbms_workload_repository.awr_report_html(728837302, 1, 183029, 183030));
+--select * from table(dbms_workload_repository.awr_report_html(DBID, INSTANCE_NUMBER, SNAP_ID_BEGIN, SNAP_ID_END));
