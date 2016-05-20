@@ -1,2 +1,0 @@
-#connect as sysdba
-@?/rdbms/admin/utlrp.sql;
