@@ -1,0 +1,19 @@
+#vi ~/.vimrc
+set incsearch
+set magic
+set laststatus=1
+set ruler
+set title
+set smarttab
+set smartindent
+set autoindent
+set ts=4
+set shiftwidth=4
+set softtabstop=4
+set sm
+set wildmode=longest,list
+set showmode
+set showcmd
+set showmatch
+
+syntax on

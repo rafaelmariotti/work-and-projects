@@ -1,0 +1,8 @@
+#as sysdba
+SELECT 'execute OWF_MGR.wf_engine.abortprocess ('''||item_type||''','''||item_key||''');'
+FROM OWF_MGR.wf_item_activity_statuses
+WHERE activity_status <> 'COMPLETE';
+
+--execute output query
+
+execute OWF_MGR.wf_purge.total;
