@@ -1,0 +1,12 @@
+#as root
+yum install postgresql95.x86_64 postgresql95-server.x86_64 postgresql95-devel.x86_64 postgresql95-contrib.x86_64 postgresql95-odbc.x86_64 -y
+
+#better file system to storage data files: xfs (tip: use lvm)
+yum install xfsprogs xfsdump -y
+
+#change postgres service to change database home location
+vi /etc/init.d/postgresql-9.5
+  #PGDATA=/var/lib/pgsql/9.5/data
+  PGDATA=/${new_location}
+
+/etc/init.d/postgres initdb
