@@ -11,7 +11,7 @@ alter system set db_name='${old_SID}' scope=spfile;
 alter system set audit_file_dest='/u01/app/oracle/admin/${new_SID}/adump' scope=spfile;
 alter system set control_files='+DATA/${new_SID}/control01.ctl','+DATA/${new_SID}/control02.ctl' scope=spfile;
 alter system set db_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','+RECO/${old_SID}/','+RECO/${new_SID}/','+REDO/${old_SID}/','+REDO/${new_SID}/' scope=spfile;
-alter system set log_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','+RECO/${old_SID}/','+RECO/${new_SID}/','+REDO/${old_SID}/','+REDO/new_SID/ scope=spfile;
+alter system set log_file_name_convert='+DATA/${old_SID}/','+DATA/${new_SID}/','+RECO/${old_SID}/','+RECO/${new_SID}/','+REDO/${old_SID}/','+REDO/${new_SID}/' scope=spfile;
 
 rman target=/ << EOF
 run {
@@ -28,6 +28,16 @@ run {
 }
 EOF
 
+#  note: if you have the following error:
+#  creating datafile file number=1 name=+DATA/prodbr/datafile/system.424.889925087
+#  RMAN-00571: ===========================================================
+#  RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+#  RMAN-00571: ===========================================================
+#  RMAN-03002: failure of restore command at 06/21/2016 16:46:43
+#  ORA-01180: can not create datafile 1
+#  ORA-01110: data file 1: '+DATA/prodbr/datafile/system.424.889925087'
+#  
+#  then, delete your instance and recreate your spfile and controlfile all over again (this is due to a bug)
 
 sqlplus / as sysdba << EOF
 shutdown immediate;
