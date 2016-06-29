@@ -1,0 +1,38 @@
+--check all sql plan baselines
+SELECT sql_handle,
+  plan_name,
+  sql_text,
+  enabled,
+  accepted,
+  fixed
+FROM dba_sql_plan_baselines
+WHERE upper(sql_text) LIKE upper('%YOUR_QUERY_HERE%%');
+
+--create a sql plan baseline for a specific query from v$sql (cursor cache)
+SET serveroutput ON
+DECLARE
+  my_plans pls_integer;
+BEGIN
+  my_plans := DBMS_SPM.LOAD_PLANS_FROM_CURSOR_CACHE( sql_id => 'd7hkzr0ms0g01');
+END;
+/
+
+--evolve (accept) an specific sql plan baseline
+SET serveroutput ON
+DECLARE
+  evolve_out CLOB;
+BEGIN
+  evolve_out := DBMS_SPM.EVOLVE_SQL_PLAN_BASELINE ( SQL_HANDLE => 'SQL_bc79b0ddb7f82808', COMMIT => 'YES' );
+  dbms_output.put_line(evolve_out);
+END;
+/
+
+--drop a sql plan baseline
+SET serveroutput ON
+DECLARE
+  drop_result pls_integer;
+BEGIN
+  drop_result := DBMS_SPM.DROP_SQL_PLAN_BASELINE( sql_handle => 'SQL_12e883c3a49c5a21', plan_name => 'SQL_PLAN_15u43sfk9sqj18a24f1e9');
+  dbms_output.put_line(drop_result);
+END;
+/
