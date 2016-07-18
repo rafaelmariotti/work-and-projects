@@ -1,0 +1,5 @@
+pg_basebackup -h prod-br.db.cloud.bionexo.com.br -D /etc/postgresql/data/9.5 -R -P -U replication --xlog-method=stream
+
+pg_ctl promote
+--or
+trigger_file

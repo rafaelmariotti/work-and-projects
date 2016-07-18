@@ -1,0 +1,30 @@
+#RMAN> recover database;
+#
+#starting media recovery
+#
+#Oracle Error: 
+#ORA-01547: warning: RECOVER succeeded but OPEN RESETLOGS would get error below
+#ORA-01152: file 1 was not restored from a sufficiently old backup 
+#ORA-01110: data file 1: '/package/oracle/oradata/perseus/system01.dbf'
+#
+#RMAN-00571: ===========================================================
+#RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+#RMAN-00571: ===========================================================
+#RMAN-03002: failure of recover command at 02/15/2012 11:09:12
+#RMAN-06053: unable to perform media recovery because of missing log
+#RMAN-06025: no backup of archived log for thread 1 with sequence 41765 and starting SCN of 9738413586917 found to restore
+#...
+#RMAN-06025: no backup of archived log for thread 1 with sequence 41731 and starting SCN of 9738413516741 found to restore
+#
+#RMAN> alter database open resetlogs;
+#
+#RMAN-00571: ===========================================================
+#RMAN-00569: =============== ERROR MESSAGE STACK FOLLOWS ===============
+#RMAN-00571: ===========================================================
+#RMAN-03002: failure of alter db command at 02/15/2012 11:28:44
+#ORA-01152: file 1 was not restored from a sufficiently old backup 
+#ORA-01110: data file 1: '/package/oracle/oradata/perseus/system01.dbf'
+
+RMAN> recover database until sequence 41731;
+RMAN> alter database open resetlogs;
+
