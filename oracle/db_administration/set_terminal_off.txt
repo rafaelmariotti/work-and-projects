@@ -1,0 +1,5 @@
+sqlplus -s / as sysdba << EOF
+  set echo off pagesize 0;
+  set heading off;
+  set feedback off;
+EOF
