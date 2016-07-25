@@ -8,4 +8,3 @@ FROM OWF_MGR.wf_item_activity_statuses
 WHERE activity_status <> 'COMPLETE';
 
 execute OWF_MGR.wf_purge.total;
-
