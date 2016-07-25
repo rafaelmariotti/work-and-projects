@@ -13,4 +13,10 @@ cd owb/bin/unix
 #export
 OMBEXPORT MDL_FILE '${dump_directory}/export.mdl' FROM PROJECT '${owb_project_name}' WITH DEPENDEE_DEPTH MAX INCLUDE_USER_DEFINITIONS OUTPUT LOG '${dump_log_directory}/export.log'
 
+#import
+OMBIMPORT MDL_FILE '${dump_directory}/export.mdl' USE UPDATE_MODE MATCH_BY NAMES OUTPUT LOG TO '${dump_log_directory}/export.log'
+OMBCC '${owb_project_name}'
+OMBCONNECT CONTROL_CENTER
+OMBCOMMIT
+
 exit
