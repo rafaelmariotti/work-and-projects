@@ -90,7 +90,8 @@ run_backup(){
       crosscheck backup;
       crosscheck archivelog all;
 
-      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}' plus archivelog format '${backup_home}/%d_archivelog_%e-%p.bkp' tag='archivelog_${backup_date}' delete input;
+      backup incremental level 0 as compressed backupset database format '${backup_home}/%d_backupset_%s-%p.bkp' tag='backupset_${backup_date}';
+      backup as compressed backupset incremental level 1 for recover of tag='backupset_${backup_date}' format '${backup_home}/%d_backupset_differential_%s-%p.bkp' database plus archivelog format '${backup_home}/%d_archivelog_%e-%p.bkp' delete input;
       backup tag 'archivelog_${backup_date}' format '${backup_home}/%d_archivelog_%e-%p.bkp' archivelog all delete input;
 
       backup spfile format '${backup_home}/spfile.bkp';
