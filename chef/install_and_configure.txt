@@ -1,0 +1,23 @@
+#as root
+cd ~
+wget https://www.opscode.com/chef/install.sh
+./install.sh
+
+#check if it has successfully installed
+chef-solo -v
+
+#installing opscode - tool to organize the file structure
+cd ~
+wget http://github.com/opscode/chef-repo/tarball/master
+tar -zxf master
+mv chef-chef-repo* chef-repo
+rm -f master
+
+#configuring knife - cookbook manager
+cd ~/chef-repo
+mkdir .chef
+echo "cookbook_path [ '/root/chef-repo/cookbooks' ]" > .chef/knife.rb
+
+#configure chef-solo to run chef
+cd ~/chef-repo
+echo -e "file_cache_path \"/root/chef-solo\"\ncookbook_path \"/root/chef-repo/cookbooks\"" > solo.rb

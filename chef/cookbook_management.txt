@@ -1,0 +1,8 @@
+#as root
+knife cookbook create ${cookbook_name}
+
+#downloading a cookbook
+knife cookbook site download ${cookbook_name}
+
+#execute a cookbook recipe
+chef-solo -c /root/chef-repo/solo.rb -j ${json_path}

@@ -1,0 +1,9 @@
+#template
+{
+  "run_list": [ "recipe[${cookbook}]", "recipe[${cookbook}::${recipe}]", ... ]
+}
+
+#example
+{
+  "run_list": [ "recipe[yum]", "recipe[pyenv::system]", "recipe[oradock_chef::oradock]" ]
+}

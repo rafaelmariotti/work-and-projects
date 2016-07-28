@@ -1,0 +1,31 @@
+#version 9.5.3
+
+#download postgresql binary file as root
+cd /tmp/
+wget http://ftp.postgresql.org/pub/source/v9.5.3/postgresql-9.5.3.tar.gz
+tar -xzf postgresql-9.5.3.tar.gz
+cd /postgresql-9.5.3.tar.gz
+
+./configure --prefix=${binary_files_dir} #for example, /usr/local/pg953
+make -j ${parallel_value}
+make install
+
+cd contrib
+make -j ${parallel_value}
+make install
+
+useradd postgres
+#configure $PATH variable in ~/.bash_profile, if you need
+
+cp /tmp/postgresql-9.5.3/contrib/start-scripts/${os_system} /etc/init.d #in this case, 'linux'
+
+#create instance data directory, for example: /data
+mkdir -p /data
+chown postgres:postgres /data
+su - postgres
+initdb -D /data -E unicode #check -k param, highly recommended in mission critical data environments
+echo PGDATA=/data >> ~/.bash_profile
+
+#start instance database
+pg_ctl -D /data -l /var/log/postgresql.log start
+
