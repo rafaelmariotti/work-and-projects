@@ -17,6 +17,7 @@ rm -f master
 cd ~/chef-repo
 mkdir .chef
 echo "cookbook_path [ '/root/chef-repo/cookbooks' ]" > .chef/knife.rb
+#knife cookbook site download ${cookbook} [${version}]
 
 #configure chef-solo to run chef
 cd ~/chef-repo
