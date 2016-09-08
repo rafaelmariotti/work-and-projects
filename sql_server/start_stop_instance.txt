@@ -1,0 +1,9 @@
+#start/stop the sql server instance
+
+net stop ${instance_name}
+net start ${instance_name}
+net restart ${instance_name}
+
+#example:
+
+net stop mssqlserver

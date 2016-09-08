@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: teste
+# Cookbook Name:: oradock
 # Recipe:: default
 #
-# Copyright 2016, YOUR_COMPANY_NAME
+# Copyright 2016, Rafael dos Santos Mariotti
 #
 # All rights reserved - Do Not Redistribute
 #
@@ -13,18 +13,23 @@ include_recipe 'filesystem'
 
 #services install and config
 package [node['yum']['install']] do
-  action		:install
+  action			:install
+end
+
+execute 'docker_install' do
+  command			'wget -qO- https://get.docker.com/ | sh'
+  action			:run
 end
 
 service 'docker' do
-  action		:start
+  action			:start
 end
 
 #pyenv config
 git '/root/.pyenv' do
   repository		'https://github.com/yyuu/pyenv.git'
   checkout_branch	'master'
-  action		:sync
+  action			:sync
 end
 
 ruby_block 'config_pyenv' do
@@ -38,32 +43,32 @@ ruby_block 'config_pyenv' do
 end
 
 pyenv_python node['pyenv']['version'] do
-  root_path	node['pyenv']['root_path']
-  action	:install
+  root_path			node['pyenv']['root_path']
+  action			:install
 end
 
 pyenv_global node['pyenv']['version'] do
-  root_path     node['pyenv']['root_path']
-  action	:create
+  root_path			node['pyenv']['root_path']
+  action			:create
 end
 
 pyenv_script 'pip_install_oradock_dependencies' do
-  pyenv_version node['pyenv']['version']
-  root_path     node['pyenv']['root_path']
-  code          'pip install --upgrade pip'
+  pyenv_version		node['pyenv']['version']
+  root_path			node['pyenv']['root_path']
+  code				'pip install --upgrade pip'
 end
 
 pyenv_script 'pip_install_oradock_dependencies' do
-  pyenv_version node['pyenv']['version']
-  root_path	node['pyenv']['root_path']
-  code          'pip install ' + node['pyenv']['modules']
+  pyenv_version		node['pyenv']['version']
+  root_path			node['pyenv']['root_path']
+  code				'pip install ' + node['pyenv']['modules']
 end
 
 #oradock config
 git '/opt/oradock' do
-  repository            'https://github.com/rafaelmariotti/oradock.git'
-  checkout_branch       'master'
-  action                :sync
+  repository        'https://github.com/rafaelmariotti/oradock.git'
+  checkout_branch   'master'
+  action            :sync
 end
 
 #configuring sysctl.conf
@@ -81,31 +86,31 @@ ruby_block 'config_sysctl.conf' do
 end
 
 directory node['backup']['directory'] do
-  owner		'root'
-  group		'root'
-  mode		'0755'
-  action	:create
+  owner				'root'
+  group				'root'
+  mode				'0755'
+  action			:create
 end
 
 directory node['data']['directory'] do
-  owner         'root'
-  group         'root'
-  mode          '0755'
-  action        :create
+  owner				'root'
+  group				'root'
+  mode				'0755'
+  action			:create
 end
 
 filesystem 'backup-oracle' do
-  fstype	'xfs'
-  device	node['backup']['device']
-  mount		node['backup']['directory']
-  force		true
-  action	[:create, :enable, :mount]
+  fstype			'xfs'
+  device			node['backup']['device']
+  mount				node['backup']['directory']
+  force				true
+  action			[:create, :enable, :mount]
 end
 
 filesystem 'data-oracle' do
-  fstype	'xfs'
-  device	node['data']['device']
-  mount		node['data']['directory']
-  force		true
-  action	[:create, :enable, :mount]
+  fstype			'xfs'
+  device			node['data']['device']
+  mount				node['data']['directory']
+  force				true
+  action			[:create, :enable, :mount]
 end

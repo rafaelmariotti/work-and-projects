@@ -1,0 +1,15 @@
+#user_objects
+use ${database};
+select * from sys.objects;
+select * from sys.objects where type = 'U'; -- 'U'=user_tables; 'V'=views; 'P'=procedures
+
+#user_columns
+use ${database};
+select * from sys.columns where object_id = OBJECT_ID('${schema}.${table_name});
+
+#all_databases
+select * from sys.databases;
+
+#desc
+exec sp_help '${schema}.${table_name}';
+

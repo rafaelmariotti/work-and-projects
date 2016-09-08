@@ -4,6 +4,6 @@ exp ${user}/${pass}@${tns} file=${dump_file_name.dmp} log=${log_file_name.log} b
 expdp ${user}/${pass}@${tns} directory=${directory_object} dumpfile=${dump_file_name.dmp} logfile=${log_file_name.log} content=${data_or_metadata_only} full=${y_n} schemas=${schemas_name} include=table:\"in \(\'TABLE\'\)\" tables=${schema.table} remap_schema=${schema_name}:${schema_name} exclude=${statistics_indexes} query=\"where id=\'id\'\" ignore=${y_n} version=${11.2.0.4} parallel=${parallel_value}
 
 #import
-imp ${user}/${pass}@${tns} file=${dump_file_name.dmp} log=${log_file_name.log} buffer=${10000000} full=${y_n} statistics=${none} grants=${y_n} indexes=${y_n} constraints=${y_n} owner=${schemas_name} rows=${y_n}
+imp ${user}/${pass}@${tns} file=${dump_file_name.dmp} log=${log_file_name.log} buffer=${10000000} full=${y_n} statistics=${none} grants=${y_n} indexes=${y_n} constraints=${y_n} touser=${schemas_name} rows=${y_n}
 
 impdp ${user}/${pass}@${tns} directory=${directory_object} dumpfile=${dump_file_name.dmp} logfile=${log_file_name.log} content=${data_or_metadata_only} full=${y_n} schemas=${schemas_name} include=table:\"in \(\'TABLE\'\)\" tables=${schema.table} remap_schema=${schema_name}:${schema_name} exclude=${statistics_indexes} query=\"where id=\'id\'\" ignore=${y_n} version=${11.2.0.4} parallel=${parallel_value}
