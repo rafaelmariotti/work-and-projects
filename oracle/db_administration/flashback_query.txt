@@ -1,0 +1,24 @@
+--flashback version query
+SELECT versions_xid XID, 
+versions_startscn START_SCN, 
+versions_endscn END_SCN, 
+versions_operation OPERATION, 
+tab.* 
+FROM tab
+versions between scn minvalue and maxvalue
+WHERE id = 123;
+
+--flashback transaction query
+SELECT  xid, 
+start_scn START, 
+commit_scn COMMIT, 
+operation OP, 
+logon_user USER,
+undo_sql 
+FROM flashback_transaction_query
+WHERE xid = HEXTORAW('000200030000002D'); --from versions_xid of the first query
+
+--flashback query
+SELECT * 
+FROM tab
+AS OF TIMESTAMP TO_TIMESTAMP('01/01/2015 00:00:00', 'dd/mm/yyyy hh24:mi:ss');

@@ -1,5 +1,0 @@
-create user ${user_backup} with password '${password}';
-
-grant connect on database ${database} to ${user_backup};
-grant all privileges on all tables in schema public to ${user_backup};
-grant all privileges on all sequences in schema public to ${user_backup};

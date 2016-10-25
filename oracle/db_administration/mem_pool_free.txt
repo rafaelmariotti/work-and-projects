@@ -1,0 +1,2 @@
+SELECT TO_CHAR(ROUND(SUM(DECODE(pool,'shared pool',DECODE(name,'free memory',(bytes)/(1024*1024),0),0)),2)) pool_free_mem
+FROM V$SGASTAT;
