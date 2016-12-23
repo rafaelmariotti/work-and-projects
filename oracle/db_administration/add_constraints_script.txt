@@ -1,0 +1,54 @@
+SELECT 'alter table '
+  || fk_owner
+  || '.'
+  || fk_table_name
+  || ' add constraint '
+  || fk_constraint_name 
+  || ' foreign key ('
+  || fk_columns_name
+  || ') references '
+  || pk_owner
+  || '.'
+  || pk_table_name
+  || '('
+  || pk_columns_name
+  || ') '
+  || fk_status
+  || ';' AS constraint_command
+FROM
+  (SELECT fk_cons.owner     AS fk_owner,
+    fk_cons.constraint_name AS fk_constraint_name,
+    fk_cons.table_name      AS fk_table_name,
+    listagg(fk_cons_col.column_name, ',') within GROUP (
+  ORDER BY fk_cons_col.position) AS fk_columns_name,
+    fk_cons.constraint_type      AS fk_constraint_type,
+    fk_cons.status               AS fk_status,
+    pk_cons.owner                AS pk_owner,
+    pk_cons.constraint_name      AS pk_constraint_name,
+    pk_cons.table_name           AS pk_table_name,
+    listagg(pk_cons_col.column_name, ',') within GROUP (
+  ORDER BY pk_cons_col.position) AS pk_columns_name
+  FROM dba_constraints fk_cons
+  JOIN dba_constraints pk_cons
+  ON fk_cons.owner              = pk_cons.owner
+  AND fk_cons.r_constraint_name = pk_cons.constraint_name
+  JOIN dba_cons_columns fk_cons_col
+  ON fk_cons.owner            = fk_cons_col.owner
+  AND fk_cons.constraint_name = fk_cons_col.constraint_name
+  JOIN dba_cons_columns pk_cons_col
+  ON pk_cons.owner            = pk_cons_col.owner
+  AND pk_cons.constraint_name = pk_cons_col.constraint_name
+  AND fk_cons_col.position    = pk_cons_col.position
+  WHERE fk_cons.owner         = :fk_owner
+  AND fk_cons.constraint_name = :fk_name
+  AND fk_cons.constraint_type = 'R'
+  GROUP BY fk_cons.owner,
+    fk_cons.constraint_name,
+    fk_cons.table_name,
+    fk_cons.constraint_type,
+    fk_cons.status,
+    pk_cons.owner,
+    pk_cons.constraint_name,
+    pk_cons.table_name
+  ORDER BY fk_cons.constraint_name
+  ) ;

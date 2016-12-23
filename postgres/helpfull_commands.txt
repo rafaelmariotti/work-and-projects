@@ -1,0 +1,5 @@
+\dn - list schemas
+\dt - list tables in schema public
+  \dt schema_name.* - list tables in schema_name
+\det - list foreign tables in schema public
+\dew+ - list foreign data-wrappers

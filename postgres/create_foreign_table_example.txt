@@ -1,0 +1,9 @@
+CREATE FOREIGN TABLE ${schema}.${table_name} (
+	id_table integer,
+	description varchar(100)
+) 
+--for oracle
+SERVER ${server_name} OPTIONS (schema '${SCHEMA_NAME_UPPER}', table '${TABLE_NAME_UPPER}');
+--for postgres
+OPTIONS (schema_name '${schema_name}', table_name '${table_name}');
+

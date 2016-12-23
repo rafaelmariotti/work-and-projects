@@ -1,112 +1,91 @@
 #!/bin/bash
 
-############################################
-# script: Backup archive database via rman #
-# date: 12/06/2015                         #
-# version: 1.0                             #
-# developed by: Rafael Mariotti            #
-############################################
+#################################################################################
+# script: Backup archive database via rman										#
+# developed by: Rafael Mariotti													#
+#																				#
+# arguments: database target_archive_directory parallel_level s3_archive_bucket	#
+#################################################################################
 
 source ~/.bash_profile
 
-check_parameters(){
-  echo "checking parameters... (archive_home s3_flag s3_bucket)"
-  if [ $# -le 4 ] && [ $# -gt 0 ]; then
-    if [ ! -e $2 ]; then
-      echo "  ERROR(2): archive home does not exists"
-      exit 2
-    fi
-    if [ "$3" != "send_s3" ] && [ "$3" != "" ]; then
-      echo "ERROR(3) wrong s3_flag"
-      exit 3
-    elif [ "$3" == "send_s3" ] && [ -z `echo "$4" | grep "s3://"` ]; then
-      echo "ERROR(4): wrong s3_bucket"
-      exit 4
-    fi
-  else
-    echo "  ERROR(1): wrong argument number"
-    exit 1
-  fi
-
-  echo "  Ok."
-  return 0
+function delete_old_archives {
+	find ${archive_base}/* -type d -ctime +7 -exec rm -rf {} \;
 }
 
-delete_old_archives(){
-  archive_base=$1
-  backup_dir=$2
+function run_archive {
+	mkdir -p ${archive_home}
+	if [ $(ps aux | grep archive_database.sh | grep -v "grep" | wc -l) -gt 3 ]; then
+		echo "WARNING(1): archive process already running (cant overwrite process)"
+		exit
+	fi
 
-  find ${archive_base}/* -type d -ctime +7 -exec rm -rf {} \;
-}
+	echo "Starting archive process... ($(date +"%d/%m/%Y %H:%M"))"
+	echo "RUNNING" > ${backup_base}/archive_status_${database}.log
+	archive_hour=$(date +"%m-%d-%Y_%H:%M")
 
-run_archive(){
-  archive_home=$1
+	channels=""
+    for ((channel_count=1; channel_count <= ${parallel_level}; channel_count++))
+    do
+      channels=$(echo -e "${channels} allocate channel channel${channel_count} device type disk maxpiecesize 2G;")
+    done
 
-  mkdir -p ${archive_home}
-  if [ `ps aux | grep archive_database.sh | grep -v "grep" | wc -l` -gt 3 ]; then
-    echo "WARNING(1): archive process already running (cant overwrite process)"
-    exit
-  fi
+    release_channels=""
+    for ((channel_count=1; channel_count <= $(cat /proc/cpuinfo | grep processor | wc -l); channel_count++))
+    do
+      release_channels=$(echo -e "${release_channels} release channel channel${channel_count};")
+    done
 
-  echo "Starting archive process... (`date +"%d/%m/%Y %H:%M"`)"
-  archive_hour=`date +"%m-%d-%Y_%H:%M"`
+	rm -f ${archive_home}/controlfile.bkp
+	rman target sys/0r4SysPwd << EOF
+		run {
+			configure controlfile autobackup off;
 
-  rm -f ${archive_home}/controlfile.bkp
-  rman target sys/0r4SysPwd << EOF
-    run {
-      configure controlfile autobackup off;
+			${channels}
 
-      allocate channel c1 device type disk maxpiecesize 2G;
-      allocate channel c2 device type disk maxpiecesize 2G;
+			backup tag 'archivelog_${archive_hour}' format '${archive_home}/%d_archivelog_%s-%p.bkp' archivelog all delete input;
+			backup current controlfile format '${archive_home}/controlfile.bkp';
 
-      backup tag 'archivelog_${archive_hour}' format '${archive_home}/%d_archivelog_%s-%p.bkp' archivelog all delete input;
-      backup current controlfile format '${archive_home}/controlfile.bkp';
-
-      release channel c1;
-      release channel c2;
+			${release_channels}
   }
 EOF
-  echo "Done (`date +"%d/%m/%Y %H:%M"`)"
+	echo "DONE" > ${backup_base}/archive_status_${database}.log
+	echo "Done ($(date +"%d/%m/%Y %H:%M"))"
 }
 
-send_to_s3(){
-  archive_home=$1
-  s3_flag=$2
-  s3_bucket_archive=$3
-  archive_dir=$4
-
+function send_to_s3 {
   aws s3 rm ${s3_bucket}/${backup_dir}/controlfile.bkp --quiet
 
-  if [ "${s3_flag}" == "send_s3" ]; then
-    for file in `ls ${archive_home}`
-    do
-      if [ `aws s3 ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l` -eq 0 ]
-      then
-        aws s3 cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
-      fi
+	if [ -n "${s3_bucket}" ]; then
+		for file in $(ls ${archive_home})
+		do
+			if [ $(aws s3 ls ${s3_bucket_archive}/${archive_dir}/ | grep ${file} | wc -l) -eq 0 ]
+			then
+				aws s3 cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
+			fi
 
-      while [ -z `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}'` ] || [ `ls -lrt ${archive_home} | grep ${file} | awk '{print $5}'` -ne `aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $3}'` ];
-      do
-        echo "  Currupted file. Sending again..."
-        aws cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
-      done
-    done
-  fi
+			while [ -z $(aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $4}') ] || [ $(ls -lrt ${archive_home} | grep ${file} | awk '{print $5}') -ne $(aws s3 ls ${s3_bucket_archive}/${archive_dir}/${file} | awk '{print $3}') ];
+			do
+				echo "  Currupted file. Sending again..."
+				aws cp ${archive_home}/${file} ${s3_bucket_archive}/${archive_dir}/${file} #--multipart-chunk-size-mb=512
+			done
+		done
+	fi
 }
 
-main(){
-  archive_base=$2
-  s3_flag=$3
-  s3_bucket=$4
-  backup_dir="arch`date +\"%Y%m%d\"`"
-  archive_home=${archive_base}/${backup_dir}
+function main {
+	database=$1
+	archive_base=$2
+	parallel_level=$3
+	s3_bucket=$4
+	backup_dir="arch$(date +\"%Y%m%d\")"
+	archive_home=${archive_base}/${backup_dir}
 
-  export ORACLE_SID=$1
+	export ORACLE_SID=${database}
 
-  check_parameters $1 $2 $3 $4
-  delete_old_archives $2 ${backup_dir}
-  run_archive ${archive_home}
-  send_to_s3 ${archive_home} ${s3_flag} ${s3_bucket} ${backup_dir}
+	delete_old_archives
+	run_archive
+	send_to_s3
 }
 
-main $1 $2 $3 $4
+main $@
