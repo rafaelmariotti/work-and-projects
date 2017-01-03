@@ -11,6 +11,7 @@ CREATE USER user_aq IDENTIFIED BY "user_aq";
 ALTER USER user_aq DEFAULT TABLESPACE tablespace_default;
 GRANT unlimited TABLESPACE TO user_aq;
 GRANT CONNECT, RESOURCE TO user_aq;
+GRANT EXECUTE on sys.dbms_aq to user_aq;
 
 GRANT SELECT ON user.first_table TO user_aq;
 GRANT SELECT ON user.second_table TO user_aq;
@@ -84,6 +85,7 @@ END;
 
 BEGIN
   dbms_aqadm.grant_queue_privilege ( privilege => 'ALL', queue_name => 'admin_aq.q_second_table_aq', grantee => 'user_aq', grant_option => FALSE);
+  dbms_aqadm.grant_queue_privilege ( privilege => 'ALL', queue_name => 'admin_aq.q_second_except', grantee => 'user_aq', grant_option => FALSE);
 END;
 /
 
@@ -142,4 +144,4 @@ END;
 /
 
 --if you want to check all the messages, just run
---SELECT * FROM ADMIN_AQ.AQ$TB_WS_LOG_ACESSO_AQ;
+--SELECT * FROM ADMIN_AQ.AQ$TB_FIRST_TABLE_AQ;
