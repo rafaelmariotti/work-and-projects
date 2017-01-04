@@ -25,9 +25,9 @@ CREATE OR REPLACE TYPE type_first_table_aq
 IS
   OBJECT
   (
-	id_tablee		NUMBER,
-	login			varchar2(30),
-	info			varchar2(100)
+    id_table        NUMBER,
+    login           varchar2(30),
+    info            varchar2(100)
   );
 /
 
@@ -35,7 +35,7 @@ CREATE OR REPLACE TYPE type_second_table_aq
 IS
   OBJECT
   (
-    id_tablee       NUMBER,
+    id_table        NUMBER,
     login           varchar2(30),
     info            varchar2(100)
   );
@@ -122,10 +122,9 @@ BEGIN
   dopt.navigation    := dbms_aq.first_message;
   dopt.wait          := 3; --timeout in seconds
   dbms_aq.dequeue(queue_name => 'admin_aq.q_first_table_aq', dequeue_options => dopt, message_properties => msg_prop, payload => msg, msgid => msgid);
-  dbms_output.put_line(msg.id||' - '||msg.login||' - '||msg.operacao||' - '||msg.IP||' - '||msg.data_acesso||' - '||msg.parametros||' - '||msg.nome_arquivo_xml);
+  dbms_output.put_line(msg.id_table||' - '||msg.login||' - '||msg.info);
 END;
 /
-
 
 --DEQUEUE FROM EXCEPTION QUEUE EXAMPLE
 SET serveroutput ON;
@@ -139,7 +138,7 @@ BEGIN
   dopt.navigation    := dbms_aq.first_message;
   dopt.wait          := 3; --timeout in seconds
   dbms_aq.dequeue(queue_name => 'admin_aq.q_first_except', dequeue_options => dopt, message_properties => msg_prop, payload => msg, msgid => msgid);
-  dbms_output.put_line(msg.id||' - '||msg.login||' - '||msg.operacao||' - '||msg.IP||' - '||msg.data_acesso||' - '||msg.parametros||' - '||msg.nome_arquivo_xml);
+  dbms_output.put_line(msg.id_table||' - '||msg.login||' - '||msg.info);
 END;
 /
 
