@@ -1,5 +1,5 @@
 #connect as sysdba
---sga size
+--sga size and usage
 SELECT f.pool ,
   f.name ,
   ROUND(s.sgasize/(1024*1024), 2) total_mb ,
@@ -11,6 +11,8 @@ FROM
   v$sgastat f
 WHERE f.name = 'free memory'
 AND f.pool   = s.pool;
+
+--all sga structures size
 SELECT pool,
   ROUND(SUM(bytes)/(1024*1024), 2) size_mb
 FROM v$sgastat
@@ -21,7 +23,7 @@ SELECT name, ROUND(bytes/(1024*1024), 2) FROM v$sgastat WHERE pool IS NULL
 UNION
 SELECT 'ALL', ROUND(SUM(bytes)/(1024*1024), 2) FROM v$sgastat ;
 
---sga usage
+--cache hit ratio and physical hits
 SELECT
     f.pool
   , f.name
