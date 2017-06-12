@@ -1,2 +1,5 @@
 aws rds modify-db-instance --db-instance-identifier ${rds_istance_name} --db-parameter-group-name ${parameter_group}
 aws rds reset-db-parameter-group --db-parameter-group-name ${parameter_group_name} --parameters "ParameterName=sga_max_size, ApplyMethod=pending-reboot"
+
+#change s3 file to private again
+aws s3api put-object-acl --bucket ${bucket_name} --key ${file_path} --acl private

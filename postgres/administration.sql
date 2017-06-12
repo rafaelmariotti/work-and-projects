@@ -1,6 +1,6 @@
 # session status
-select datname, usename, application_name, query_start,
-date_part('second', age(now(),query_start)), waiting,
+select datname, usename, application_name, client_addr IP, query_start,
+date_part('second', age(now(),query_start)) time_exec, waiting,
 state, query
 from pg_stat_activity
 where state !='idle';
