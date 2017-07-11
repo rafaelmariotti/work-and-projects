@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    cpf_utils (1.0.0)
+    faker (1.8.2)
+      i18n (~> 0.5)
+    i18n (0.8.6)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  cpf_utils (= 1.0.0)
+  faker
+
+BUNDLED WITH
+   1.15.1

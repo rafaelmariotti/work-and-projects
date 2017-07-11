@@ -1,0 +1,23 @@
+gem list
+gem list ${name}
+gem install ${name} -v ${version}
+
+bundle install
+
+rails new ${project_name}
+rails _${version}_ new ${project_name}
+rails new ${project_name} -B
+
+rails server -b ${IP} -p ${port}
+
+# how to change project name (rails version >= 4.1)
+# 1. 
+#   - edit config/application.rb
+#   - change "module ${application_name}"
+# 2.
+#   - edit config/initializers/session_store.rb
+#   - change "Rails.application.config.session_store :cookie_store, key: '${application_name}'"
+# 3.
+#   - change your directory name
+# 
+# # if your version is < 4.1, use 'rename' gem
