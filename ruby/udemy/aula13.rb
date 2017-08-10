@@ -17,6 +17,11 @@ v.push(101)
 v.push(true)
 v.push("rafael")
 v.push(0.99)
+v.unshift(1)
+puts v.inspect
+v.pop
+puts v.inspect
+v.shift
 puts v.inspect
 
 puts "\n"
