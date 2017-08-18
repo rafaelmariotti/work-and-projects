@@ -1,0 +1,17 @@
+SELECT ss.SNAP_ID,
+  s.begin_interval_time,
+  ss.instance_number,
+  ss.sql_id,
+  SS.PLAN_HASH_VALUE,
+  ss.optimizer_cost,
+  ss.module,
+  ss.executions_total,
+  ss.elapsed_time_total/1000000,
+  ss.executions_delta
+FROM dba_hist_sqlstat ss
+INNER JOIN dba_hist_snapshot s
+ON ss.SNAP_ID  =s.SNAP_ID
+AND ss.dbid    =s.dbid
+AND SS.INSTANCE_NUMBER = s.instance_number
+WHERE ss.sql_id in (:sql_id)
+ ORDER BY begin_interval_time desc;
