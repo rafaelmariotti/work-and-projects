@@ -1,0 +1,15 @@
+<% welcome_msg = 'Seja Bem Vindo' %>
+<% nice_message = helper_nice_message %>
+
+<h1><%= welcome_msg %> <%= @my_name %>!</h1>
+<h2><%= nice_message %></h2>
+
+<br>
+
+<p>Find me in app/views/home/index.html.erb</p>
+<ul>
+	<li><%= link_to "Tipos", kinds_path %></li>
+	<li><%= link_to "Contatos", contacts_path %></a></li>
+	<li><%= link_to "Endereços", addresses_path%></a></li>
+	<li><%= link_to "Telefones", phones_path%></a></li>
+</ul>

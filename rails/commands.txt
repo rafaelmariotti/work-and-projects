@@ -21,3 +21,24 @@ rails server -b ${IP} -p ${port}
 #   - change your directory name
 # 
 # # if your version is < 4.1, use 'rename' gem
+
+rake db:create
+
+#create table template
+rails generate scaffold Model field:field_type
+#example
+rails generate scaffold Event name:string start_time:datetime kind:references
+
+#create database/schema
+rake db:create
+
+#create table
+rake db:migrate
+
+#create controller with action
+rails generate controller $controller_name $action
+#example
+rails generate controller home index
+
+#my routes
+http://localhost:3000/rails/info/routes
