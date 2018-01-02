@@ -22,17 +22,3 @@ UNION
 SELECT name, ROUND(bytes/(1024*1024), 2) FROM v$sgastat WHERE pool IS NULL
 UNION
 SELECT 'ALL', ROUND(SUM(bytes)/(1024*1024), 2) FROM v$sgastat ;
-
---cache hit ratio and physical hits
-SELECT
-    f.pool
-  , f.name
-  , round(s.sgasize/(1024*1024), 2) total_mb
-  , round(f.bytes/(1024*1024), 2) free_mb
-  , ROUND(f.bytes/s.sgasize*100, 2) "% Free"
-FROM
-    (SELECT SUM(bytes) sgasize, pool FROM v$sgastat GROUP BY pool) s
-  , v$sgastat f
-WHERE
-    f.name = 'free memory'
-  AND f.pool = s.pool;
