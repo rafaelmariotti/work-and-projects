@@ -1,9 +1,9 @@
 # session status
 select datname, usename, application_name, client_addr IP, query_start,
-date_part('second', age(now(),query_start)) time_exec, waiting,
+date_part('second', age(now(),query_start)) time_exec, wait_event_type, wait_event
 state, query
 from pg_stat_activity
-where state !='idle';
+where state !='idle' and query not like '%pg_stat_activity%';
 
 # check queries which are locking tables
 SELECT blockeda.pid AS blocked_pid, blockeda.query as blocked_query,
